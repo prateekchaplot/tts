@@ -1,0 +1,10 @@
+torch>=2.0
+transformers>=4.40
+soundfile
+numpy
+
+# Optional extras (uncomment as needed):
+# kokoro
+# piper-tts
+# TTS
+# bark
