@@ -126,7 +126,7 @@ def list_models():
     for m in RECOMMENDED_MODELS:
         extra = ""
         if "Kokoro" in m["label"]:
-            extra = " (optional: pip install kokoro)"
+            extra = " (optional: uv sync --extra kokoro)"
         print(f"  {m['id']} - {m['label']}{extra}")
 
 
@@ -190,7 +190,7 @@ def synthesize(model_id, text, voice, device, verbose=False):
 
     if "kokoro" in lid:
         if not _HAS_KOKORO:
-            raise RuntimeError("Kokoro model selected but 'kokoro' not installed. pip install kokoro")
+            raise RuntimeError("Kokoro model selected but 'kokoro' not installed. Run: uv sync --extra kokoro")
         try:
             from kokoro import KPipeline
             pl = KPipeline(lang_code="a")

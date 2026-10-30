@@ -4,9 +4,19 @@ CLI to run text-to-speech locally with models downloaded from Hugging Face.
 
 ## Setup
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+uv sync
+```
+Optional extras:
+```powershell
+uv sync --extra kokoro
+uv sync --extra piper
+uv sync --extra coqui
+uv sync --extra bark
+```
+
+Run commands with `uv run`:
+```powershell
+uv run python main.py "Hello world"
 ```
 
 ## Usage
