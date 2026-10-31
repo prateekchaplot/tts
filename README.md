@@ -46,3 +46,7 @@ Generated audio is written to the configured output directory (default `output/`
 - `device`: `auto`, `cpu`, or `cuda`.
 - `output_dir`: directory for generated WAV files (default `output`).
 - `verbose`: enable verbose logging.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and commit-message conventions (this project uses Conventional Commits).
