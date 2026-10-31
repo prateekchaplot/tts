@@ -17,22 +17,22 @@ Note: `kokoro` and `coqui` adapters are implemented; the `piper` adapter is not 
 
 Run commands with `uv run`:
 ```powershell
-uv run python main.py "Hello world"
+uv run main.py "Hello world"
 ```
 
 ## Usage
 ```powershell
-uv run python main.py "Hello world"
-uv run python main.py --model facebook/mms-tts-eng "Hello"
-uv run python main.py --voice <voice> "Hello"
-uv run python main.py --device cpu "Hello"
-uv run python main.py --file input.txt
-uv run python main.py --output out.wav
-uv run python main.py --output-dir my_outputs
-uv run python main.py --list-models
-uv run python main.py --recommended
-uv run python main.py --list-voices
-uv run python main.py --verbose
+uv run main.py "Hello world"
+uv run main.py --model facebook/mms-tts-eng "Hello"
+uv run main.py --voice <voice> "Hello"
+uv run main.py --device cpu "Hello"
+uv run main.py --file input.txt
+uv run main.py --output out.wav
+uv run main.py --output-dir my_outputs
+uv run main.py --list-models
+uv run main.py --recommended
+uv run main.py --list-voices
+uv run main.py --verbose
 ```
 
 Text can also be entered interactively when no text and no `--file` are given.
