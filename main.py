@@ -13,6 +13,7 @@ from tts import (
     detect_device,
     ensure_default_model,
     list_models,
+    list_recommended_models,
     list_voices,
     load_config,
     save_config,
@@ -43,7 +44,8 @@ def parse_args():
     p.add_argument("--output", "-o", help="Save WAV to this path")
     p.add_argument("--output-dir", help="Directory for generated WAV files (overrides config)")
     p.add_argument("--file", "-f", help="Read text from file")
-    p.add_argument("--list-models", action="store_true", help="List recommended models")
+    p.add_argument("--list-models", action="store_true", help="List locally cached models")
+    p.add_argument("--recommended", action="store_true", help="List recommended models")
     p.add_argument("--list-voices", action="store_true", help="List voices for selected model")
     p.add_argument("--verbose", action="store_true", help="Verbose logging")
     return p.parse_args()
@@ -55,8 +57,11 @@ def main():
 
     verbose = bool(args.verbose or cfg.get("verbose", False))
 
-    if args.list_models:
-        list_models()
+    if args.list_models or args.recommended:
+        if args.list_models:
+            list_models()
+        if args.recommended:
+            list_recommended_models()
         return
 
     requested_device = args.device if args.device else cfg.get("device", "auto")

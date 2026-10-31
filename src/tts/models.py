@@ -1,5 +1,7 @@
 """Recommended models and model/voice helpers."""
 
+import sys
+
 from .config import CONFIG_PATH, save_config
 from .device import _device_index
 
@@ -68,13 +70,91 @@ def ensure_default_model(cfg, args_model):
     return model_id
 
 
-def list_models():
+def _human_size(num):
+    if not num:
+        return ""
+    size = float(num)
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if size < 1024.0:
+            if unit == "B":
+                return f"{int(size)} {unit}"
+            return f"{size:.1f} {unit}"
+        size /= 1024.0
+    return f"{size:.1f} PB"
+
+
+def _scan_cached_models(cache_dir=None):
+    """Return (list_of_dicts, error_message_or_None) for cached HF models."""
+    try:
+        from huggingface_hub import scan_cache_dir
+    except Exception as e:
+        return None, f"huggingface_hub unavailable: {e}"
+    try:
+        info = scan_cache_dir(cache_dir) if cache_dir is not None else scan_cache_dir()
+    except Exception as e:
+        return None, str(e)
+
+    recommended_ids = {m["id"] for m in RECOMMENDED_MODELS}
+    repos = []
+    for r in getattr(info, "repos", []) or []:
+        if getattr(r, "repo_type", None) != "model":
+            continue
+        size = getattr(r, "size_on_disk", 0) or 0
+        if not size:
+            continue
+        repos.append(
+            {
+                "repo_id": r.repo_id,
+                "size_bytes": size,
+                "size_human": getattr(r, "size_on_disk_str", None) or _human_size(size),
+                "complete": bool(getattr(r, "revisions", None)) and bool(getattr(r, "refs", None)),
+                "recommended": r.repo_id in recommended_ids,
+            }
+        )
+    repos.sort(key=lambda x: x["repo_id"])
+    return repos, None
+
+
+def list_models(cache_dir=None):
+    """List models available in the local Hugging Face cache."""
+    repos, err = _scan_cached_models(cache_dir)
+    if err is not None:
+        print(f"Could not scan local model cache: {err}", file=sys.stderr)
+        return []
+    if not repos:
+        print("No locally cached models found.")
+        return []
+    print("Locally available models:")
+    for r in repos:
+        suffix = " [recommended]" if r["recommended"] else ""
+        print(f"  {r['repo_id']}  ({r['size_human']}){suffix}")
+    return repos
+
+
+def list_recommended_models(show_cached=True, cache_dir=None):
+    """List recommended models, annotated with cache status when possible."""
+    cached_ids = set()
+    if show_cached:
+        repos, _ = _scan_cached_models(cache_dir)
+        if repos:
+            cached_ids = {r["repo_id"] for r in repos}
+
     print("Recommended models:")
+    result = []
     for m in RECOMMENDED_MODELS:
-        extra = ""
-        if "Kokoro" in m["label"]:
+        extra = m.get("extra", "")
+        if not extra and "Kokoro" in m.get("label", ""):
             extra = " (optional: uv sync --extra kokoro)"
-        print(f"  {m['id']} - {m['label']}{extra}")
+        cached = ""
+        if show_cached:
+            cached = " [cached]" if m["id"] in cached_ids else " [not cached]"
+        print(f"  {m['id']} - {m['label']}{extra}{cached}")
+        result.append(dict(m))
+    return result
+
+
+# Backwards-compatible alias.
+list_recommended = list_recommended_models
 
 
 def list_voices(model_id, device, verbose=False):

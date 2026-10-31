@@ -27,6 +27,7 @@ python main.py --file input.txt
 python main.py --output out.wav
 python main.py --output-dir my_outputs
 python main.py --list-models
+python main.py --recommended
 python main.py --list-voices
 ```
 

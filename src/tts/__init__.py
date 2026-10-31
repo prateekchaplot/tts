@@ -9,6 +9,8 @@ from .models import (
     _HAS_PIPER,
     ensure_default_model,
     list_models,
+    list_recommended,
+    list_recommended_models,
     list_voices,
 )
 from .synthesize import synthesize
@@ -27,6 +29,8 @@ __all__ = [
     "_device_index",
     "ensure_default_model",
     "list_models",
+    "list_recommended",
+    "list_recommended_models",
     "list_voices",
     "synthesize",
 ]
