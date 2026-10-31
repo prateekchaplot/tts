@@ -1,7 +1,7 @@
 """Local TTS package."""
 
 from .config import CONFIG_FILENAME, CONFIG_PATH, PROJECT_ROOT, load_config, save_config
-from .device import _device_index, detect_device
+from .device import _device_index, detect_device, torch_device_name
 from .models import (
     RECOMMENDED_MODELS,
     _HAS_COQUI,
@@ -27,6 +27,7 @@ __all__ = [
     "save_config",
     "detect_device",
     "_device_index",
+    "torch_device_name",
     "ensure_default_model",
     "list_models",
     "list_recommended",

@@ -1,6 +1,6 @@
 """Synthesis engine."""
 
-from .device import _device_index
+from .device import _device_index, torch_device_name
 from .models import _HAS_COQUI, _HAS_KOKORO, _HAS_PIPER
 
 
@@ -17,7 +17,11 @@ def synthesize(model_id, text, voice, device, verbose=False):
             raise RuntimeError("Kokoro model selected but 'kokoro' not installed. Run: uv sync --extra kokoro")
         try:
             from kokoro import KPipeline
-            pl = KPipeline(lang_code="a")
+            torch_dev = torch_device_name(device)
+            try:
+                pl = KPipeline(lang_code="a", device=torch_dev)
+            except TypeError:
+                pl = KPipeline(lang_code="a")
             audio_chunks = []
             sr = 24000
             for _gs, _ps, audio in pl(text, voice=voice or "af_heart"):
@@ -33,6 +37,11 @@ def synthesize(model_id, text, voice, device, verbose=False):
         try:
             from TTS.api import TTS as CoquiTTS
             tts = CoquiTTS(model_id)
+            torch_dev = torch_device_name(device)
+            try:
+                tts.to(torch_dev)
+            except Exception:
+                pass
             wav = tts.tts(text=text)
             audio = np.asarray(wav, dtype=np.float32)
             return audio, 22050
