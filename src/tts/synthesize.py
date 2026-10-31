@@ -61,6 +61,12 @@ def synthesize(model_id, text, voice, device, verbose=False):
     except Exception as e:
         raise RuntimeError(f"Failed to load model '{model_id}': {e}")
 
+    if getattr(pipe, "sampling_rate", None) is None:
+        raise RuntimeError(
+            f"Model '{model_id}' does not appear to be a text-to-speech model "
+            f"(no sampling rate). Use --recommended or a cached [TTS] model."
+        )
+
     out = None
     if voice:
         for key in ("voice_preset", "voice", "speaker", "description"):
@@ -81,6 +87,28 @@ def synthesize(model_id, text, voice, device, verbose=False):
     if not isinstance(out, dict) or "audio" not in out:
         raise RuntimeError(f"Unexpected pipeline output: {type(out)}")
 
-    audio = np.asarray(out["audio"]).squeeze().astype(np.float32)
-    sr = int(out.get("sampling_rate", 16000))
+    sr_raw = out.get("sampling_rate", None)
+    if sr_raw is None:
+        sr_raw = getattr(pipe, "sampling_rate", None)
+    try:
+        sr = int(sr_raw)
+    except (TypeError, ValueError):
+        raise RuntimeError(
+            f"Model '{model_id}' did not return a valid sampling rate ({sr_raw!r}); "
+            f"it may not be a text-to-speech model."
+        )
+    if sr <= 0:
+        raise RuntimeError(f"Model '{model_id}' returned an invalid sampling rate: {sr}")
+
+    audio = np.asarray(out["audio"]).squeeze()
+    if audio.size == 0 or not np.issubdtype(audio.dtype, np.number):
+        raise RuntimeError(f"Model '{model_id}' returned no usable audio.")
+    if not np.all(np.isfinite(audio)):
+        raise RuntimeError(f"Model '{model_id}' returned non-finite audio.")
+    if audio.ndim != 1:
+        raise RuntimeError(
+            f"Model '{model_id}' returned unexpected audio shape {tuple(audio.shape)}; "
+            f"it may not be a text-to-speech model."
+        )
+    audio = audio.astype(np.float32)
     return audio, sr

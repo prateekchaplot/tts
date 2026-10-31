@@ -1,6 +1,9 @@
 """Recommended models and model/voice helpers."""
 
+import json
+import os
 import sys
+from pathlib import Path
 
 from .config import CONFIG_PATH, save_config
 from .device import _device_index
@@ -70,6 +73,53 @@ def ensure_default_model(cfg, args_model):
     return model_id
 
 
+_KNOWN_TTS_MODEL_TYPES = {
+    "vits", "bark", "speecht5", "parler_tts", "musicgen", "musicgen_melody",
+    "csm", "dia", "encodec", "mimi", "fastspeech2_conformer_with_hifigan",
+    "univnet",
+}
+_TTS_NAME_TOKENS = (
+    "tts", "speech", "bark", "parler", "kokoro", "mms", "vits", "xtts",
+    "audio", "tortoise", "piper", "melotts", "cosyvoice", "chat-tts", "f5",
+    "styletts", "orpheus", "chatterbox",
+)
+
+
+def _cache_root(cache_dir=None):
+    if cache_dir is not None:
+        return Path(cache_dir)
+    env = os.environ.get("HF_HUB_CACHE") or os.environ.get("HUGGINGFACE_HUB_CACHE")
+    if env:
+        return Path(env)
+    hf_home = os.environ.get("HF_HOME")
+    if hf_home:
+        return Path(hf_home) / "hub"
+    return Path.home() / ".cache" / "huggingface" / "hub"
+
+
+def _is_probably_tts(repo_id, cache_dir=None):
+    root = _cache_root(cache_dir)
+    repo_dir = root / ("models--" + (repo_id or "").replace("/", "--"))
+    if repo_dir.exists():
+        for cfg_path in repo_dir.rglob("config.json"):
+            try:
+                data = json.loads(cfg_path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if not isinstance(data, dict):
+                continue
+            sr = data.get("sampling_rate", data.get("sample_rate"))
+            if sr is not None:
+                return True
+            if "codec_config" in data:
+                return True
+            mt = data.get("model_type")
+            if isinstance(mt, str) and mt.lower() in _KNOWN_TTS_MODEL_TYPES:
+                return True
+    low = (repo_id or "").lower()
+    return any(tok in low for tok in _TTS_NAME_TOKENS)
+
+
 def _human_size(num):
     if not num:
         return ""
@@ -115,7 +165,7 @@ def _scan_cached_models(cache_dir=None):
     return repos, None
 
 
-def list_models(cache_dir=None):
+def list_models(cache_dir=None, tts_only=False):
     """List models available in the local Hugging Face cache."""
     repos, err = _scan_cached_models(cache_dir)
     if err is not None:
@@ -124,10 +174,14 @@ def list_models(cache_dir=None):
     if not repos:
         print("No locally cached models found.")
         return []
+    tts_flags = {r["repo_id"]: _is_probably_tts(r["repo_id"], cache_dir) for r in repos}
+    if tts_only:
+        repos = [r for r in repos if tts_flags[r["repo_id"]]]
     print("Locally available models:")
     for r in repos:
         suffix = " [recommended]" if r["recommended"] else ""
-        print(f"  {r['repo_id']}  ({r['size_human']}){suffix}")
+        tts_tag = " [TTS]" if tts_flags[r["repo_id"]] else " [not TTS]"
+        print(f"  {r['repo_id']}  ({r['size_human']}){suffix}{tts_tag}")
     return repos
 
 

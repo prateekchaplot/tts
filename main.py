@@ -62,6 +62,7 @@ def main():
             list_models()
         if args.recommended:
             list_recommended_models()
+        print("Note: only [TTS] models can be synthesized; see --recommended for known-good models.")
         return
 
     requested_device = args.device if args.device else cfg.get("device", "auto")
