@@ -8,8 +8,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from tts import (
-    CONFIG_PATH,
+import contextlib  # noqa: E402
+
+import soundfile as sf  # noqa: E402
+
+from tts import (  # noqa: E402
     detect_device,
     ensure_default_model,
     list_models,
@@ -20,14 +23,9 @@ from tts import (
     synthesize,
 )
 
-import soundfile as sf
-
 
 def _resolve_output_dir(args, cfg):
-    if getattr(args, "output_dir", None):
-        raw = args.output_dir
-    else:
-        raw = cfg.get("output_dir", "output")
+    raw = args.output_dir if getattr(args, "output_dir", None) else cfg.get("output_dir", "output")
     p = Path(raw)
     if not p.is_absolute():
         p = ROOT / p
@@ -39,8 +37,9 @@ def parse_args():
     p.add_argument("text", nargs="*", help="Text to synthesize")
     p.add_argument("--model", help="Hugging Face model id (overrides config)")
     p.add_argument("--voice", help="Voice name/preset (model-specific)")
-    p.add_argument("--device", default=None, choices=["auto", "cpu", "cuda"],
-                   help="Device (default: auto)")
+    p.add_argument(
+        "--device", default=None, choices=["auto", "cpu", "cuda"], help="Device (default: auto)"
+    )
     p.add_argument("--output", "-o", help="Save WAV to this path")
     p.add_argument("--output-dir", help="Directory for generated WAV files (overrides config)")
     p.add_argument("--file", "-f", help="Read text from file")
@@ -48,13 +47,29 @@ def parse_args():
     p.add_argument("--recommended", action="store_true", help="List recommended models")
     p.add_argument("--list-voices", action="store_true", help="List voices for selected model")
     p.add_argument("--verbose", action="store_true", help="Verbose logging")
-    p.add_argument("--speed", "--playback-speed", "--rate", dest="speed", type=float,
-                   default=None, help="Playback speed factor (default: config or 1.0)")
+    p.add_argument(
+        "--speed",
+        "--playback-speed",
+        "--rate",
+        dest="speed",
+        type=float,
+        default=None,
+        help="Playback speed factor (default: config or 1.0)",
+    )
     p.add_argument("--ui", action="store_true", help="Launch the Gradio web UI")
-    p.add_argument("--ui-port", type=int, default=7860, help="Port for the Gradio UI (default: 7860)")
-    p.add_argument("--ui-share", action="store_true", help="Create a public share link for the Gradio UI")
-    p.add_argument("--mcp", "--mcp-server", dest="mcp_server", action="store_true",
-                   help="Expose the Gradio UI as an MCP server (requires `uv sync --extra mcp`)")
+    p.add_argument(
+        "--ui-port", type=int, default=7860, help="Port for the Gradio UI (default: 7860)"
+    )
+    p.add_argument(
+        "--ui-share", action="store_true", help="Create a public share link for the Gradio UI"
+    )
+    p.add_argument(
+        "--mcp",
+        "--mcp-server",
+        dest="mcp_server",
+        action="store_true",
+        help="Expose the Gradio UI as an MCP server (requires `uv sync --extra mcp`)",
+    )
     return p.parse_args()
 
 
@@ -63,9 +78,12 @@ def main():
 
     if getattr(args, "ui", False) or getattr(args, "mcp_server", False):
         from tts.ui import launch
-        launch(port=getattr(args, "ui_port", 7860),
-               share=bool(getattr(args, "ui_share", False)),
-               mcp_server=True if getattr(args, "mcp_server", False) else None)
+
+        launch(
+            port=getattr(args, "ui_port", 7860),
+            share=bool(getattr(args, "ui_share", False)),
+            mcp_server=True if getattr(args, "mcp_server", False) else None,
+        )
         return
 
     cfg = load_config()
@@ -89,7 +107,9 @@ def main():
             list_models()
         if args.recommended:
             list_recommended_models()
-        print("Note: only [TTS] models can be synthesized; see --recommended for known-good models.")
+        print(
+            "Note: only [TTS] models can be synthesized; see --recommended for known-good models."
+        )
         return
 
     requested_device = args.device if args.device else cfg.get("device", "auto")
@@ -149,10 +169,8 @@ def main():
         cfg["playback_speed"] = speed
         cfg["speed"] = speed
     if args.output_dir or args.device or args.verbose or args.speed is not None:
-        try:
+        with contextlib.suppress(Exception):
             save_config(cfg)
-        except Exception:
-            pass
 
 
 if __name__ == "__main__":

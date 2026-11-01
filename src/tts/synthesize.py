@@ -1,5 +1,7 @@
 """Synthesis engine."""
 
+import contextlib
+
 from .device import _device_index, torch_device_name
 from .models import _HAS_COQUI, _HAS_KOKORO, _HAS_PIPER
 
@@ -21,7 +23,7 @@ def _apply_speed(audio, sr, speed):
         n = arr.shape[0]
         if n < 2:
             return audio, sr
-        new_n = max(1, int(round(n / speed)))
+        new_n = max(1, round(n / speed))
         if new_n == n:
             return np.asarray(audio), sr
         x_old = np.arange(n)
@@ -32,8 +34,9 @@ def _apply_speed(audio, sr, speed):
         return audio, sr
 
 
-def synthesize(model_id, text, voice, device, verbose=False, speed=1.0,
-               playback_speed=None, rate=None):
+def synthesize(
+    model_id, text, voice, device, verbose=False, speed=1.0, playback_speed=None, rate=None
+):
     if playback_speed is not None:
         speed = playback_speed
     if rate is not None:
@@ -45,15 +48,18 @@ def synthesize(model_id, text, voice, device, verbose=False, speed=1.0,
     try:
         import numpy as np
     except Exception as e:
-        raise RuntimeError(f"numpy not available: {e}")
+        raise RuntimeError(f"numpy not available: {e}") from e
     lid = (model_id or "").lower()
     device_idx = _device_index(device)
 
     if "kokoro" in lid:
         if not _HAS_KOKORO:
-            raise RuntimeError("Kokoro model selected but 'kokoro' not installed. Run: uv sync --extra kokoro")
+            raise RuntimeError(
+                "Kokoro model selected but 'kokoro' not installed. Run: uv sync --extra kokoro"
+            )
         try:
             from kokoro import KPipeline
+
             torch_dev = torch_device_name(device)
             try:
                 pl = KPipeline(lang_code="a", device=torch_dev)
@@ -68,35 +74,36 @@ def synthesize(model_id, text, voice, device, verbose=False, speed=1.0,
             audio = np.concatenate(audio_chunks).astype(np.float32)
             return _apply_speed(audio, sr, speed)
         except Exception as e:
-            raise RuntimeError(f"Kokoro synthesis failed: {e}")
+            raise RuntimeError(f"Kokoro synthesis failed: {e}") from e
 
     if ("xtts" in lid or lid.startswith("tts_models/")) and _HAS_COQUI:
         try:
             from TTS.api import TTS as CoquiTTS
+
             tts = CoquiTTS(model_id)
             torch_dev = torch_device_name(device)
-            try:
+            with contextlib.suppress(Exception):
                 tts.to(torch_dev)
-            except Exception:
-                pass
             wav = tts.tts(text=text)
             audio = np.asarray(wav, dtype=np.float32)
             return _apply_speed(audio, 22050, speed)
         except Exception as e:
-            raise RuntimeError(f"Coqui synthesis failed: {e}")
+            raise RuntimeError(f"Coqui synthesis failed: {e}") from e
 
     if "piper" in lid and _HAS_PIPER:
-        raise RuntimeError("Piper adapter not fully implemented; use a transformers-compatible model.")
+        raise RuntimeError(
+            "Piper adapter not fully implemented; use a transformers-compatible model."
+        )
 
     try:
         from transformers import pipeline
     except Exception as e:
-        raise RuntimeError(f"transformers not available: {e}")
+        raise RuntimeError(f"transformers not available: {e}") from e
 
     try:
         pipe = pipeline("text-to-speech", model=model_id, device=device_idx)
     except Exception as e:
-        raise RuntimeError(f"Failed to load model '{model_id}': {e}")
+        raise RuntimeError(f"Failed to load model '{model_id}': {e}") from e
 
     if getattr(pipe, "sampling_rate", None) is None:
         raise RuntimeError(
@@ -119,7 +126,7 @@ def synthesize(model_id, text, voice, device, verbose=False, speed=1.0,
         try:
             out = pipe(text)
         except Exception as e:
-            raise RuntimeError(f"Synthesis failed for '{model_id}': {e}")
+            raise RuntimeError(f"Synthesis failed for '{model_id}': {e}") from e
 
     if not isinstance(out, dict) or "audio" not in out:
         raise RuntimeError(f"Unexpected pipeline output: {type(out)}")
@@ -133,7 +140,7 @@ def synthesize(model_id, text, voice, device, verbose=False, speed=1.0,
         raise RuntimeError(
             f"Model '{model_id}' did not return a valid sampling rate ({sr_raw!r}); "
             f"it may not be a text-to-speech model."
-        )
+        ) from None
     if sr <= 0:
         raise RuntimeError(f"Model '{model_id}' returned an invalid sampling rate: {sr}")
 

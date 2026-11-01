@@ -22,16 +22,19 @@ _HAS_PIPER = False
 _HAS_COQUI = False
 try:
     import kokoro  # noqa: F401
+
     _HAS_KOKORO = True
 except Exception:
     pass
 try:
     import piper  # noqa: F401
+
     _HAS_PIPER = True
 except Exception:
     pass
 try:
     from TTS.api import TTS as _CoquiTTS  # noqa: F401
+
     _HAS_COQUI = True
 except Exception:
     pass
@@ -40,7 +43,7 @@ except Exception:
 def ensure_default_model(cfg, args_model):
     if args_model:
         return args_model
-    if "default_model" in cfg and cfg["default_model"]:
+    if cfg.get("default_model"):
         return cfg["default_model"]
     print("\nNo default model configured. Choose one:")
     for i, m in enumerate(RECOMMENDED_MODELS, 1):
@@ -74,14 +77,38 @@ def ensure_default_model(cfg, args_model):
 
 
 _KNOWN_TTS_MODEL_TYPES = {
-    "vits", "bark", "speecht5", "parler_tts", "musicgen", "musicgen_melody",
-    "csm", "dia", "encodec", "mimi", "fastspeech2_conformer_with_hifigan",
+    "vits",
+    "bark",
+    "speecht5",
+    "parler_tts",
+    "musicgen",
+    "musicgen_melody",
+    "csm",
+    "dia",
+    "encodec",
+    "mimi",
+    "fastspeech2_conformer_with_hifigan",
     "univnet",
 }
 _TTS_NAME_TOKENS = (
-    "tts", "speech", "bark", "parler", "kokoro", "mms", "vits", "xtts",
-    "audio", "tortoise", "piper", "melotts", "cosyvoice", "chat-tts", "f5",
-    "styletts", "orpheus", "chatterbox",
+    "tts",
+    "speech",
+    "bark",
+    "parler",
+    "kokoro",
+    "mms",
+    "vits",
+    "xtts",
+    "audio",
+    "tortoise",
+    "piper",
+    "melotts",
+    "cosyvoice",
+    "chat-tts",
+    "f5",
+    "styletts",
+    "orpheus",
+    "chatterbox",
 )
 
 
@@ -216,27 +243,67 @@ def list_voices(model_id, device, verbose=False):
     if "kokoro" in lid:
         try:
             from kokoro import KPipeline  # noqa: F401
-            voices = ["af_heart", "af_alloy", "af_aoede", "af_bella", "af_jessica",
-                      "af_kore", "af_nicole", "af_nova", "af_river", "af_sarah",
-                      "af_sky", "am_adam", "am_echo", "am_eric", "am_fenrir",
-                      "am_liam", "am_michael", "am_onyx", "am_puck", "am_santa",
-                      "bf_emma", "bf_isabella", "bm_george", "bm_lewis", "bm_daniel"]
+
+            voices = [
+                "af_heart",
+                "af_alloy",
+                "af_aoede",
+                "af_bella",
+                "af_jessica",
+                "af_kore",
+                "af_nicole",
+                "af_nova",
+                "af_river",
+                "af_sarah",
+                "af_sky",
+                "am_adam",
+                "am_echo",
+                "am_eric",
+                "am_fenrir",
+                "am_liam",
+                "am_michael",
+                "am_onyx",
+                "am_puck",
+                "am_santa",
+                "bf_emma",
+                "bf_isabella",
+                "bm_george",
+                "bm_lewis",
+                "bm_daniel",
+            ]
             return voices
         except Exception as e:
             if verbose:
                 print(f"[voices] kokoro load failed: {e}")
     if "bark" in lid:
         presets = [f"v2/en_speaker_{i}" for i in range(10)]
-        presets += ["v2/zh_speaker_0", "v2/zh_speaker_1", "v2/zh_speaker_2",
-                    "v2/zh_speaker_3", "v2/zh_speaker_4", "v2/zh_speaker_5",
-                    "v2/zh_speaker_6", "v2/zh_speaker_7", "v2/zh_speaker_8",
-                    "v2/zh_speaker_9", "v2/fr_speaker_0", "v2/de_speaker_0",
-                    "v2/hi_speaker_0", "v2/it_speaker_0", "v2/ja_speaker_0",
-                    "v2/ko_speaker_0", "v2/pl_speaker_0", "v2/pt_speaker_0",
-                    "v2/ru_speaker_0", "v2/es_speaker_0", "v2/tr_speaker_0"]
+        presets += [
+            "v2/zh_speaker_0",
+            "v2/zh_speaker_1",
+            "v2/zh_speaker_2",
+            "v2/zh_speaker_3",
+            "v2/zh_speaker_4",
+            "v2/zh_speaker_5",
+            "v2/zh_speaker_6",
+            "v2/zh_speaker_7",
+            "v2/zh_speaker_8",
+            "v2/zh_speaker_9",
+            "v2/fr_speaker_0",
+            "v2/de_speaker_0",
+            "v2/hi_speaker_0",
+            "v2/it_speaker_0",
+            "v2/ja_speaker_0",
+            "v2/ko_speaker_0",
+            "v2/pl_speaker_0",
+            "v2/pt_speaker_0",
+            "v2/ru_speaker_0",
+            "v2/es_speaker_0",
+            "v2/tr_speaker_0",
+        ]
         return presets
     try:
         from transformers import pipeline
+
         pipe = pipeline("text-to-speech", model=model_id, device=_device_index(device))
         model = getattr(pipe, "model", None)
         voices = None

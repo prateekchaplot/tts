@@ -63,6 +63,22 @@ Playback has been removed; audio is always saved. Generated audio is written to 
 - `verbose`: enable verbose logging.
 - `playback_speed` / `speed`: playback speed factor (default 1.0).
 
+## Development
+
+Install dev tools and git hooks:
+
+```powershell
+uv sync
+uv run python scripts/setup_dev.py
+```
+
+Run lint/format checks:
+
+```powershell
+uv run --group dev ruff check .
+uv run --group dev ruff format --check .
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, workflow, and commit-message conventions (this project uses Conventional Commits).

@@ -24,10 +24,7 @@ def detect_device(requested="auto", verbose=False):
         print(f"[device] torch not available ({e}); forcing cpu")
         return "cpu"
     if requested == "auto":
-        if torch.cuda.is_available():
-            dev = "cuda"
-        else:
-            dev = "cpu"
+        dev = "cuda" if torch.cuda.is_available() else "cpu"
     elif requested == "cpu":
         dev = "cpu"
     elif requested.startswith("cuda"):
@@ -44,7 +41,7 @@ def detect_device(requested="auto", verbose=False):
         try:
             idx = _device_index(dev)
             name = torch.cuda.get_device_name(idx if idx >= 0 else 0)
-            vram = torch.cuda.get_device_properties(idx if idx >= 0 else 0).total_memory / (1024 ** 3)
+            vram = torch.cuda.get_device_properties(idx if idx >= 0 else 0).total_memory / (1024**3)
             print(f"[device] GPU: {name} ({vram:.1f} GB VRAM)")
         except Exception as e:
             print(f"[device] GPU info unavailable: {e}")

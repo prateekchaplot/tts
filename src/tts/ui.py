@@ -35,8 +35,7 @@ def _require_mcp():
         import mcp  # noqa: F401
     except Exception as e:
         raise RuntimeError(
-            "The `mcp` package is required for MCP support. "
-            "Install it with: uv sync --extra mcp"
+            "The `mcp` package is required for MCP support. Install it with: uv sync --extra mcp"
         ) from e
     return True
 
@@ -87,11 +86,20 @@ def refresh_voices(model_id):
     return g.update(choices=choices, value=value)
 
 
-def generate(text, file_obj=None, model_choice=None, custom_model="",
-            voice_choice=None, custom_voice="", device_choice="auto",
-            output_dir=None, verbose=False, speed=1.0):
+def generate(
+    text,
+    file_obj=None,
+    model_choice=None,
+    custom_model="",
+    voice_choice=None,
+    custom_voice="",
+    device_choice="auto",
+    output_dir=None,
+    verbose=False,
+    speed=1.0,
+):
     """Generate audio and return (audio_path_or_None, status_text)."""
-    g = _require_gradio()
+    _require_gradio()
     # Resolve text from textbox or uploaded file.
     if (not text or not str(text).strip()) and file_obj is not None:
         path = None
@@ -167,6 +175,7 @@ def generate(text, file_obj=None, model_choice=None, custom_model="",
     if sf is None:
         try:
             import soundfile as _sf
+
             _sf.write(out_path, audio, sr)
         except Exception as e:
             return None, f"soundfile unavailable: {e}"
@@ -242,34 +251,48 @@ def build_app():
             file_input = g.File(label="Or read text from file", type="filepath")
         with g.Row():
             model_dd = g.Dropdown(choices=models, value=default_model, label="Model")
-            custom_model = g.Textbox(label="Custom model id (overrides dropdown)",
-                                    placeholder="org/model-name")
+            custom_model = g.Textbox(
+                label="Custom model id (overrides dropdown)", placeholder="org/model-name"
+            )
         with g.Row():
             voice_dd = g.Dropdown(choices=[], value=None, label="Voice")
-            custom_voice = g.Textbox(label="Custom voice (overrides dropdown)",
-                                    placeholder="voice name / preset")
+            custom_voice = g.Textbox(
+                label="Custom voice (overrides dropdown)", placeholder="voice name / preset"
+            )
         with g.Row():
-            device_dd = g.Dropdown(choices=["auto", "cpu", "cuda"], value=default_device,
-                                 label="Device")
+            device_dd = g.Dropdown(
+                choices=["auto", "cpu", "cuda"], value=default_device, label="Device"
+            )
             output_dir_tb = g.Textbox(value=default_output_dir, label="Output directory")
             verbose_cb = g.Checkbox(value=default_verbose, label="Verbose")
-            speed_slider = g.Slider(minimum=0.5, maximum=2.0, value=default_speed, step=0.05,
-                                   label="Playback speed")
+            speed_slider = g.Slider(
+                minimum=0.5, maximum=2.0, value=default_speed, step=0.05, label="Playback speed"
+            )
         generate_btn = g.Button("Generate", variant="primary")
         with g.Row():
             audio_out = g.Audio(label="Generated audio", type="filepath")
             status = g.Textbox(label="Status", interactive=False)
 
-        model_dd.change(fn=refresh_voices, inputs=model_dd, outputs=voice_dd,
-                       api_visibility="private")
+        model_dd.change(
+            fn=refresh_voices, inputs=model_dd, outputs=voice_dd, api_visibility="private"
+        )
         generate_btn.click(
             fn=generate,
-            inputs=[text, file_input, model_dd, custom_model, voice_dd, custom_voice,
-                    device_dd, output_dir_tb, verbose_cb, speed_slider],
+            inputs=[
+                text,
+                file_input,
+                model_dd,
+                custom_model,
+                voice_dd,
+                custom_voice,
+                device_dd,
+                output_dir_tb,
+                verbose_cb,
+                speed_slider,
+            ],
             outputs=[audio_out, status],
         )
-        demo.load(fn=refresh_voices, inputs=model_dd, outputs=voice_dd,
-                  api_visibility="private")
+        demo.load(fn=refresh_voices, inputs=model_dd, outputs=voice_dd, api_visibility="private")
 
     return demo
 
@@ -280,13 +303,14 @@ def launch(port=7860, share=False, mcp_server=None, **kwargs):
     Pass ``mcp_server=True`` (or set the ``GRADIO_MCP_SERVER`` env var) to
     expose the app as an MCP server.
     """
-    g = _require_gradio()
+    _require_gradio()
     if mcp_server:
         _require_mcp()
     # Gradio prints a hammer emoji when the MCP server starts, which can crash on
     # Windows consoles using a legacy code page. Force UTF-8 output to be safe.
     try:
         import sys
+
         for _stream in (sys.stdout, sys.stderr):
             if hasattr(_stream, "reconfigure"):
                 _stream.reconfigure(encoding="utf-8", errors="replace")
