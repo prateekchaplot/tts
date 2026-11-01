@@ -77,7 +77,7 @@ def refresh_voices(model_id):
 
 
 def generate(text, file_obj, model_choice, custom_model, voice_choice,
-            custom_voice, device_choice, output_dir, verbose):
+            custom_voice, device_choice, output_dir, verbose, speed=1.0):
     """Generate audio and return (audio_path_or_None, status_text)."""
     g = _require_gradio()
     # Resolve text from textbox or uploaded file.
@@ -111,6 +111,12 @@ def generate(text, file_obj, model_choice, custom_model, voice_choice,
 
     voice = (custom_voice or "").strip() or (voice_choice or "").strip() or None
     verbose = bool(verbose)
+    try:
+        speed = float(speed) if speed is not None else 1.0
+    except (TypeError, ValueError):
+        speed = 1.0
+    if speed <= 0:
+        speed = 1.0
 
     try:
         dev = detect_device(device_choice or "auto", verbose=verbose)
@@ -118,7 +124,7 @@ def generate(text, file_obj, model_choice, custom_model, voice_choice,
         return None, f"Device detection failed: {e}"
 
     try:
-        audio, sr = synthesize(model_id, text, voice, dev, verbose=verbose)
+        audio, sr = synthesize(model_id, text, voice, dev, verbose=verbose, speed=speed)
     except Exception as e:
         return None, f"Synthesis failed: {e}"
 
@@ -148,6 +154,8 @@ def generate(text, file_obj, model_choice, custom_model, voice_choice,
         cfg["device"] = device_choice or cfg.get("device", "auto")
         cfg["output_dir"] = output_dir
         cfg["verbose"] = verbose
+        cfg["playback_speed"] = speed
+        cfg["speed"] = speed
         save_config(cfg)
     except Exception:
         pass
@@ -175,6 +183,13 @@ def build_app():
         default_device = "auto"
     default_output_dir = cfg.get("output_dir", "output")
     default_verbose = bool(cfg.get("verbose", False))
+    default_speed = cfg.get("playback_speed", cfg.get("speed", 1.0))
+    try:
+        default_speed = float(default_speed)
+    except (TypeError, ValueError):
+        default_speed = 1.0
+    if default_speed <= 0:
+        default_speed = 1.0
 
     with g.Blocks(title="Local TTS") as demo:
         g.Markdown("# Local TTS\nGenerate speech from text using local Hugging Face models.")
@@ -194,6 +209,8 @@ def build_app():
                                  label="Device")
             output_dir_tb = g.Textbox(value=default_output_dir, label="Output directory")
             verbose_cb = g.Checkbox(value=default_verbose, label="Verbose")
+            speed_slider = g.Slider(minimum=0.5, maximum=2.0, value=default_speed, step=0.05,
+                                   label="Playback speed")
         generate_btn = g.Button("Generate", variant="primary")
         with g.Row():
             audio_out = g.Audio(label="Generated audio", type="filepath")
@@ -203,7 +220,7 @@ def build_app():
         generate_btn.click(
             fn=generate,
             inputs=[text, file_input, model_dd, custom_model, voice_dd, custom_voice,
-                    device_dd, output_dir_tb, verbose_cb],
+                    device_dd, output_dir_tb, verbose_cb, speed_slider],
             outputs=[audio_out, status],
         )
         demo.load(fn=refresh_voices, inputs=model_dd, outputs=voice_dd)

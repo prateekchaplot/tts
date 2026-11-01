@@ -48,6 +48,8 @@ def parse_args():
     p.add_argument("--recommended", action="store_true", help="List recommended models")
     p.add_argument("--list-voices", action="store_true", help="List voices for selected model")
     p.add_argument("--verbose", action="store_true", help="Verbose logging")
+    p.add_argument("--speed", "--playback-speed", "--rate", dest="speed", type=float,
+                   default=None, help="Playback speed factor (default: config or 1.0)")
     p.add_argument("--ui", action="store_true", help="Launch the Gradio web UI")
     p.add_argument("--ui-port", type=int, default=7860, help="Port for the Gradio UI (default: 7860)")
     p.add_argument("--ui-share", action="store_true", help="Create a public share link for the Gradio UI")
@@ -66,6 +68,18 @@ def main():
     cfg = load_config()
 
     verbose = bool(args.verbose or cfg.get("verbose", False))
+
+    if args.speed is not None:
+        speed = float(args.speed)
+    else:
+        speed = cfg.get("playback_speed", cfg.get("speed", 1.0))
+    try:
+        speed = float(speed)
+    except (TypeError, ValueError):
+        speed = 1.0
+    if speed <= 0:
+        print("Speed must be > 0.")
+        return
 
     if args.list_models or args.recommended:
         if args.list_models:
@@ -106,9 +120,9 @@ def main():
     print(f"[model] {model_id}")
     print(f"[text] {text[:120]}{'...' if len(text) > 120 else ''}")
 
-    audio, sr = synthesize(model_id, text, args.voice, device, verbose=verbose)
+    audio, sr = synthesize(model_id, text, args.voice, device, verbose=verbose, speed=speed)
     duration = len(audio) / sr if sr else 0.0
-    print(f"[audio] samples={len(audio)} sr={sr} duration={duration:.2f}s")
+    print(f"[audio] samples={len(audio)} sr={sr} duration={duration:.2f}s speed={speed}")
 
     out_path = args.output
     if not out_path:
@@ -128,7 +142,10 @@ def main():
         cfg["device"] = args.device
     if args.verbose:
         cfg["verbose"] = True
-    if args.output_dir or args.device or args.verbose:
+    if args.speed is not None:
+        cfg["playback_speed"] = speed
+        cfg["speed"] = speed
+    if args.output_dir or args.device or args.verbose or args.speed is not None:
         try:
             save_config(cfg)
         except Exception:

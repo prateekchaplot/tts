@@ -26,6 +26,7 @@ uv run main.py "Hello world"
 uv run main.py --model facebook/mms-tts-eng "Hello"
 uv run main.py --voice <voice> "Hello"
 uv run main.py --device cpu "Hello"
+uv run main.py --speed 1.25 "Hello"
 uv run main.py --file input.txt
 uv run main.py --output out.wav
 uv run main.py --output-dir my_outputs
@@ -52,6 +53,7 @@ Playback has been removed; audio is always saved. Generated audio is written to 
 - `device`: `auto`, `cpu`, or `cuda`.
 - `output_dir`: directory for generated WAV files (default `output`).
 - `verbose`: enable verbose logging.
+- `playback_speed` / `speed`: playback speed factor (default 1.0).
 
 ## Contributing
 

@@ -4,7 +4,44 @@ from .device import _device_index, torch_device_name
 from .models import _HAS_COQUI, _HAS_KOKORO, _HAS_PIPER
 
 
-def synthesize(model_id, text, voice, device, verbose=False):
+def _apply_speed(audio, sr, speed):
+    """Time-scale 1-D audio by ``speed`` (speed>1 = faster/shorter) keeping sr."""
+    try:
+        import numpy as np
+    except Exception:
+        return audio, sr
+    try:
+        speed = float(speed)
+    except (TypeError, ValueError):
+        speed = 1.0
+    if not speed or speed <= 0 or speed == 1.0:
+        return audio, sr
+    try:
+        arr = np.asarray(audio).reshape(-1)
+        n = arr.shape[0]
+        if n < 2:
+            return audio, sr
+        new_n = max(1, int(round(n / speed)))
+        if new_n == n:
+            return np.asarray(audio), sr
+        x_old = np.arange(n)
+        x_new = np.linspace(0, n - 1, new_n)
+        out = np.interp(x_new, x_old, arr).astype(np.float32)
+        return out, sr
+    except Exception:
+        return audio, sr
+
+
+def synthesize(model_id, text, voice, device, verbose=False, speed=1.0,
+               playback_speed=None, rate=None):
+    if playback_speed is not None:
+        speed = playback_speed
+    if rate is not None:
+        speed = rate
+    try:
+        speed = float(speed) if speed is not None else 1.0
+    except (TypeError, ValueError):
+        speed = 1.0
     try:
         import numpy as np
     except Exception as e:
@@ -29,7 +66,7 @@ def synthesize(model_id, text, voice, device, verbose=False):
             if not audio_chunks:
                 raise RuntimeError("Kokoro produced no audio")
             audio = np.concatenate(audio_chunks).astype(np.float32)
-            return audio, sr
+            return _apply_speed(audio, sr, speed)
         except Exception as e:
             raise RuntimeError(f"Kokoro synthesis failed: {e}")
 
@@ -44,7 +81,7 @@ def synthesize(model_id, text, voice, device, verbose=False):
                 pass
             wav = tts.tts(text=text)
             audio = np.asarray(wav, dtype=np.float32)
-            return audio, 22050
+            return _apply_speed(audio, 22050, speed)
         except Exception as e:
             raise RuntimeError(f"Coqui synthesis failed: {e}")
 
@@ -111,4 +148,4 @@ def synthesize(model_id, text, voice, device, verbose=False):
             f"it may not be a text-to-speech model."
         )
     audio = audio.astype(np.float32)
-    return audio, sr
+    return _apply_speed(audio, sr, speed)
