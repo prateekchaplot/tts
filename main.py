@@ -53,16 +53,19 @@ def parse_args():
     p.add_argument("--ui", action="store_true", help="Launch the Gradio web UI")
     p.add_argument("--ui-port", type=int, default=7860, help="Port for the Gradio UI (default: 7860)")
     p.add_argument("--ui-share", action="store_true", help="Create a public share link for the Gradio UI")
+    p.add_argument("--mcp", "--mcp-server", dest="mcp_server", action="store_true",
+                   help="Expose the Gradio UI as an MCP server (requires `uv sync --extra mcp`)")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
 
-    if getattr(args, "ui", False):
+    if getattr(args, "ui", False) or getattr(args, "mcp_server", False):
         from tts.ui import launch
         launch(port=getattr(args, "ui_port", 7860),
-               share=bool(getattr(args, "ui_share", False)))
+               share=bool(getattr(args, "ui_share", False)),
+               mcp_server=True if getattr(args, "mcp_server", False) else None)
         return
 
     cfg = load_config()

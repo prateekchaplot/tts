@@ -12,6 +12,7 @@ uv sync --extra kokoro
 uv sync --extra piper
 uv sync --extra coqui
 uv sync --extra bark
+uv sync --extra mcp
 ```
 Note: `kokoro` and `coqui` adapters are implemented; `piper` is not yet implemented; `bark` runs through the transformers pipeline (not as a dedicated adapter).
 
@@ -41,6 +42,13 @@ Launch the Gradio web UI:
 uv run main.py --ui
 uv run main.py --ui --ui-port 7860 --ui-share
 ```
+
+Expose the Gradio UI as an MCP server (requires the `mcp` extra):
+```powershell
+uv sync --extra mcp
+uv run main.py --ui --mcp
+```
+The MCP endpoint is served at `/gradio_api/mcp` (for example `http://127.0.0.1:7860/gradio_api/mcp`). You can also enable it via the `GRADIO_MCP_SERVER=1` environment variable without `--mcp`.
 
 Text can also be entered interactively when no text and no `--file` are given.
 

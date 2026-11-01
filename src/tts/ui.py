@@ -30,6 +30,17 @@ def _require_gradio():
     return gr
 
 
+def _require_mcp():
+    try:
+        import mcp  # noqa: F401
+    except Exception as e:
+        raise RuntimeError(
+            "The `mcp` package is required for MCP support. "
+            "Install it with: uv sync --extra mcp"
+        ) from e
+    return True
+
+
 def _resolve_output_dir(raw):
     p = Path(raw or "output")
     if not p.is_absolute():
@@ -76,8 +87,9 @@ def refresh_voices(model_id):
     return g.update(choices=choices, value=value)
 
 
-def generate(text, file_obj, model_choice, custom_model, voice_choice,
-            custom_voice, device_choice, output_dir, verbose, speed=1.0):
+def generate(text, file_obj=None, model_choice=None, custom_model="",
+            voice_choice=None, custom_voice="", device_choice="auto",
+            output_dir=None, verbose=False, speed=1.0):
     """Generate audio and return (audio_path_or_None, status_text)."""
     g = _require_gradio()
     # Resolve text from textbox or uploaded file.
@@ -107,6 +119,18 @@ def generate(text, file_obj, model_choice, custom_model, voice_choice,
 
     model_id = (custom_model or "").strip() or (model_choice or "").strip()
     if not model_id:
+        try:
+            cfg = load_config()
+            model_id = (cfg.get("default_model") or "").strip()
+        except Exception:
+            model_id = ""
+    if not model_id:
+        try:
+            models = available_models()
+            model_id = (models[0] if models else "").strip()
+        except Exception:
+            model_id = ""
+    if not model_id:
         return None, "No model selected."
 
     voice = (custom_voice or "").strip() or (voice_choice or "").strip() or None
@@ -128,6 +152,11 @@ def generate(text, file_obj, model_choice, custom_model, voice_choice,
     except Exception as e:
         return None, f"Synthesis failed: {e}"
 
+    if output_dir is None:
+        try:
+            output_dir = load_config().get("output_dir", "output")
+        except Exception:
+            output_dir = "output"
     out_dir = _resolve_output_dir(output_dir)
     try:
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -162,6 +191,21 @@ def generate(text, file_obj, model_choice, custom_model, voice_choice,
 
     duration = (len(audio) / sr) if sr else 0.0
     return str(out_path), f"Saved {out_path} ({duration:.2f}s, {sr} Hz)."
+
+
+# Mark `generate` as an MCP tool so it is exposed when the Gradio app runs as an
+# MCP server (see launch(mcp_server=True)).
+try:
+    generate._mcp_type = "tool"
+    generate._mcp_name = "generate"
+    generate._mcp_structured_output = False
+    generate._mcp_meta = None
+    generate._mcp_description = (
+        "Generate speech audio from text using a local TTS model. "
+        "Returns the path to the saved WAV file and a status message."
+    )
+except Exception:
+    pass
 
 
 def build_app():
@@ -216,23 +260,40 @@ def build_app():
             audio_out = g.Audio(label="Generated audio", type="filepath")
             status = g.Textbox(label="Status", interactive=False)
 
-        model_dd.change(fn=refresh_voices, inputs=model_dd, outputs=voice_dd)
+        model_dd.change(fn=refresh_voices, inputs=model_dd, outputs=voice_dd,
+                       api_visibility="private")
         generate_btn.click(
             fn=generate,
             inputs=[text, file_input, model_dd, custom_model, voice_dd, custom_voice,
                     device_dd, output_dir_tb, verbose_cb, speed_slider],
             outputs=[audio_out, status],
         )
-        demo.load(fn=refresh_voices, inputs=model_dd, outputs=voice_dd)
+        demo.load(fn=refresh_voices, inputs=model_dd, outputs=voice_dd,
+                  api_visibility="private")
 
     return demo
 
 
-def launch(port=7860, share=False, **kwargs):
-    """Build and launch the Gradio app."""
+def launch(port=7860, share=False, mcp_server=None, **kwargs):
+    """Build and launch the Gradio app.
+
+    Pass ``mcp_server=True`` (or set the ``GRADIO_MCP_SERVER`` env var) to
+    expose the app as an MCP server.
+    """
     g = _require_gradio()
+    if mcp_server:
+        _require_mcp()
+    # Gradio prints a hammer emoji when the MCP server starts, which can crash on
+    # Windows consoles using a legacy code page. Force UTF-8 output to be safe.
+    try:
+        import sys
+        for _stream in (sys.stdout, sys.stderr):
+            if hasattr(_stream, "reconfigure"):
+                _stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     app = build_app()
-    return app.launch(server_port=port, share=share, **kwargs)
+    return app.launch(server_port=port, share=share, mcp_server=mcp_server, **kwargs)
 
 
 def main():

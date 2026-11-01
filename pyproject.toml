@@ -17,6 +17,7 @@ dependencies = [
 piper = ["piper-tts"]
 coqui = ["TTS"]
 bark = ["bark"]
+mcp = ["gradio[mcp]"]
 
 [tool.uv]
 package = false
