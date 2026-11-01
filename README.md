@@ -35,6 +35,12 @@ uv run main.py --list-voices
 uv run main.py --verbose
 ```
 
+Launch the Gradio web UI:
+```powershell
+uv run main.py --ui
+uv run main.py --ui --ui-port 7860 --ui-share
+```
+
 Text can also be entered interactively when no text and no `--file` are given.
 
 First run (when `default_model` is unset in `.config.json`) prompts for a default model and saves it. Edit `.config.json` to change defaults. Flags override config for the current run; `--device`, `--output-dir`, and `--verbose` are also persisted to config.

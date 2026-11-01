@@ -48,11 +48,21 @@ def parse_args():
     p.add_argument("--recommended", action="store_true", help="List recommended models")
     p.add_argument("--list-voices", action="store_true", help="List voices for selected model")
     p.add_argument("--verbose", action="store_true", help="Verbose logging")
+    p.add_argument("--ui", action="store_true", help="Launch the Gradio web UI")
+    p.add_argument("--ui-port", type=int, default=7860, help="Port for the Gradio UI (default: 7860)")
+    p.add_argument("--ui-share", action="store_true", help="Create a public share link for the Gradio UI")
     return p.parse_args()
 
 
 def main():
     args = parse_args()
+
+    if getattr(args, "ui", False):
+        from tts.ui import launch
+        launch(port=getattr(args, "ui_port", 7860),
+               share=bool(getattr(args, "ui_share", False)))
+        return
+
     cfg = load_config()
 
     verbose = bool(args.verbose or cfg.get("verbose", False))

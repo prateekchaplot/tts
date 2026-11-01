@@ -11,6 +11,11 @@ uv sync
 uv run main.py "Hello world"
 ```
 
+Launch the Gradio web UI:
+```powershell
+uv run main.py --ui
+```
+
 Optional extras (note: `kokoro` and `coqui` adapters are implemented; `piper` is not yet implemented; `bark` runs through the transformers pipeline):
 
 ```powershell
