@@ -60,14 +60,22 @@ def synthesize(
         try:
             from kokoro import KPipeline
 
+            # Kokoro voice names are prefixed by language code (e.g. "jf_alpha" -> "j").
+            # Derive the pipeline language from the (first) selected voice.
+            voice_name = (voice or "af_heart").strip()
+            first_voice = voice_name.split(",")[0].strip() if voice_name else "af_heart"
+            lang_code = first_voice[:1].lower() if first_voice else "a"
+            if lang_code not in ("a", "b", "e", "f", "h", "i", "j", "p", "z"):
+                lang_code = "a"
+
             torch_dev = torch_device_name(device)
             try:
-                pl = KPipeline(lang_code="a", device=torch_dev)
+                pl = KPipeline(lang_code=lang_code, device=torch_dev)
             except TypeError:
-                pl = KPipeline(lang_code="a")
+                pl = KPipeline(lang_code=lang_code)
             audio_chunks = []
             sr = 24000
-            for _gs, _ps, audio in pl(text, voice=voice or "af_heart"):
+            for _gs, _ps, audio in pl(text, voice=voice_name or "af_heart"):
                 audio_chunks.append(np.asarray(audio))
             if not audio_chunks:
                 raise RuntimeError("Kokoro produced no audio")

@@ -244,7 +244,13 @@ def list_voices(model_id, device, verbose=False):
         try:
             from kokoro import KPipeline  # noqa: F401
 
+            # Full official voice set for hexgrad/Kokoro-82M (54 voices).
+            # Source: https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md
+            # Prefix encodes language: a=American English, b=British English,
+            # e=Spanish, f=French, h=Hindi, i=Italian, j=Japanese,
+            # p=Brazilian Portuguese, z=Mandarin Chinese.
             voices = [
+                # American English (20)
                 "af_heart",
                 "af_alloy",
                 "af_aoede",
@@ -265,11 +271,48 @@ def list_voices(model_id, device, verbose=False):
                 "am_onyx",
                 "am_puck",
                 "am_santa",
+                # British English (8)
+                "bf_alice",
                 "bf_emma",
                 "bf_isabella",
+                "bf_lily",
+                "bm_daniel",
+                "bm_fable",
                 "bm_george",
                 "bm_lewis",
-                "bm_daniel",
+                # Japanese (5)
+                "jf_alpha",
+                "jf_gongitsune",
+                "jf_nezumi",
+                "jf_tebukuro",
+                "jm_kumo",
+                # Mandarin Chinese (8)
+                "zf_xiaobei",
+                "zf_xiaoni",
+                "zf_xiaoxiao",
+                "zf_xiaoyi",
+                "zm_yunjian",
+                "zm_yunxi",
+                "zm_yunxia",
+                "zm_yunyang",
+                # Spanish (3)
+                "ef_dora",
+                "em_alex",
+                "em_santa",
+                # French (1)
+                "ff_siwis",
+                # Hindi (4)
+                "hf_alpha",
+                "hf_beta",
+                "hm_omega",
+                "hm_psi",
+                # Italian (2)
+                "if_sara",
+                "im_nicola",
+                # Brazilian Portuguese (3)
+                "pf_dora",
+                "pm_alex",
+                "pm_santa",
             ]
             return voices
         except Exception as e:
