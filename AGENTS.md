@@ -9,3 +9,4 @@
 - Models: prefer transformers-native recommended list; optional adapters (Kokoro/Piper/Coqui) only if installed, with install hints (`uv sync --extra <name>`). `bark` runs through the transformers pipeline.
 - No voice cloning in first iteration. No `--cache-dir`.
 - Keep changes consistent with existing structure, naming, and style.
+- Never run Python code (including `uv run main.py`, tests, or snippets); if code output is required, ask the user to run it and provide the output.
