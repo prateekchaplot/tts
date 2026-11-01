@@ -7,7 +7,14 @@ from pathlib import Path
 
 from .config import PROJECT_ROOT, load_config, save_config
 from .device import detect_device
-from .models import RECOMMENDED_MODELS, _is_probably_tts, _scan_cached_models, list_voices
+from .models import (
+    RECOMMENDED_MODELS,
+    _is_probably_tts,
+    _scan_cached_models,
+    list_voices,
+    KOKORO_LANGUAGES,
+    languages_for_model,
+)
 from .synthesize import synthesize
 
 try:
@@ -73,17 +80,50 @@ def available_models():
     return ids
 
 
-def refresh_voices(model_id):
-    """Gradio update callback: populate voice dropdown for a model."""
-    g = _require_gradio()
-    voices = None
+def _voices_for(model_id, language=None):
+    """Return voice choices for a model, optionally filtered by language code."""
     try:
         voices = list_voices(model_id, "cpu", verbose=False)
     except Exception:
         voices = None
     choices = list(voices) if voices else []
+    if language and "kokoro" in (model_id or "").lower():
+        lang = str(language).strip().lower()
+        if lang:
+            choices = [v for v in choices if (v or "")[:1].lower() == lang]
+    return choices
+
+
+def refresh_voices(model_id, language=None):
+    """Gradio update callback: populate voice dropdown for a model/language."""
+    g = _require_gradio()
+    choices = _voices_for(model_id, language)
     value = choices[0] if choices else None
     return g.update(choices=choices, value=value)
+
+
+def available_languages(model_id):
+    """Return (name, code) choices for the language dropdown."""
+    g = _require_gradio()
+    choices = []
+    if "kokoro" in (model_id or "").lower():
+        choices.append(("All languages", ""))
+        for code in languages_for_model(model_id):
+            choices.append((KOKORO_LANGUAGES.get(code, code), code))
+    return choices
+
+
+def refresh_model(model_id):
+    """Gradio update callback: populate language + voice dropdowns for a model."""
+    g = _require_gradio()
+    lang_choices = available_languages(model_id)
+    lang_value = "" if lang_choices else None
+    voices = _voices_for(model_id, lang_value)
+    voice_value = voices[0] if voices else None
+    return (
+        g.update(choices=lang_choices, value=lang_value, interactive=bool(lang_choices)),
+        g.update(choices=voices, value=voice_value),
+    )
 
 
 def generate(
@@ -255,6 +295,7 @@ def build_app():
                 label="Custom model id (overrides dropdown)", placeholder="org/model-name"
             )
         with g.Row():
+            lang_dd = g.Dropdown(choices=[], value=None, label="Language")
             voice_dd = g.Dropdown(choices=[], value=None, label="Voice")
             custom_voice = g.Textbox(
                 label="Custom voice (overrides dropdown)", placeholder="voice name / preset"
@@ -274,7 +315,10 @@ def build_app():
             status = g.Textbox(label="Status", interactive=False)
 
         model_dd.change(
-            fn=refresh_voices, inputs=model_dd, outputs=voice_dd, api_visibility="private"
+            fn=refresh_model, inputs=model_dd, outputs=[lang_dd, voice_dd], api_visibility="private"
+        )
+        lang_dd.change(
+            fn=refresh_voices, inputs=[model_dd, lang_dd], outputs=voice_dd, api_visibility="private"
         )
         generate_btn.click(
             fn=generate,
@@ -292,7 +336,7 @@ def build_app():
             ],
             outputs=[audio_out, status],
         )
-        demo.load(fn=refresh_voices, inputs=model_dd, outputs=voice_dd, api_visibility="private")
+        demo.load(fn=refresh_model, inputs=model_dd, outputs=[lang_dd, voice_dd], api_visibility="private")
 
     return demo
 

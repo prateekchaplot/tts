@@ -238,6 +238,38 @@ def list_recommended_models(show_cached=True, cache_dir=None):
 list_recommended = list_recommended_models
 
 
+# Kokoro language helpers: voice-name prefix -> human-readable language.
+KOKORO_LANGUAGES = {
+    "a": "American English",
+    "b": "British English",
+    "e": "Spanish",
+    "f": "French",
+    "h": "Hindi",
+    "i": "Italian",
+    "j": "Japanese",
+    "p": "Brazilian Portuguese",
+    "z": "Mandarin Chinese",
+}
+
+KOKORO_LANGUAGE_ORDER = ["a", "b", "e", "f", "h", "i", "j", "p", "z"]
+
+
+def is_kokoro_model(model_id):
+    return "kokoro" in (model_id or "").lower()
+
+
+def languages_for_model(model_id):
+    """Return ordered list of Kokoro language codes available for a model."""
+    if not is_kokoro_model(model_id):
+        return []
+    try:
+        voices = list_voices(model_id, "cpu", verbose=False)
+    except Exception:
+        voices = None
+    present = {(v or "")[:1].lower() for v in (voices or [])}
+    return [c for c in KOKORO_LANGUAGE_ORDER if c in present and c in KOKORO_LANGUAGES]
+
+
 def list_voices(model_id, device, verbose=False):
     lid = (model_id or "").lower()
     if "kokoro" in lid:
