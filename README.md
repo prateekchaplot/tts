@@ -1,5 +1,7 @@
 # Local TTS (Hugging Face)
 
+[![Lint](https://github.com/prateekchaplot/tts/actions/workflows/lint.yml/badge.svg)](https://github.com/prateekchaplot/tts/actions/workflows/lint.yml)
+
 CLI to run text-to-speech locally with models downloaded from Hugging Face.
 
 ## Setup
