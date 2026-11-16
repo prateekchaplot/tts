@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tts"
+version = "0.1.0"
+description = "Locally hosted text-to-speech with synchronized subtitles"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "piper-tts[alignment]==1.8.0",
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "python-multipart>=0.0.9",
+  "numpy>=2.0,<3",
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx",
+  "mypy",
+  "pytest>=8,<9",
+  "pytest-asyncio",
+  "ruff",
+]
+
+[project.scripts]
+tts = "tts.__main__:main"
+"tts.add-voice" = "tts.__main__:add_voice"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tts"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
