@@ -17,7 +17,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-_(empty — next up: T0.2 on branch `arch/tts/t0.2`, pending review)_
+| T0.2 | Config + logging | `arch/tts/t0.2` | `pytest --basetemp=.venv/pytest-tmp tests/unit` (5 passed); `ruff check src/tts tests/unit`; `ruff format --check src/tts tests/unit`; `mypy --strict src/tts`; `git diff --check` | Implemented; PR pending |
 
 ## Remaining
 
@@ -25,7 +25,6 @@ _(empty — next up: T0.2 on branch `arch/tts/t0.2`, pending review)_
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T0.2 | Config + logging | `src/tts/config.py`, `tests/unit/test_config.py` | T0.1 | Environment overrides, data directory creation, invalid log level warning/fallback |
 | T0.3 | Error envelope + API skeleton | `src/tts/api/`, `src/tts/app.py`, `src/tts/types.py`, `tests/unit/test_errors.py` | T0.2 | Health response and exact error envelope behavior |
 | T0.4 | DB schema + DAL skeleton | `src/tts/history/`, `tests/unit/test_dal.py` | T0.2 | Schema migration, CRUD, active-row eviction protection, delete-with-file |
 | T0.5 | Frontend scaffold + contracts | `frontend/` | T0.1 | Build, mock placeholder, strict TypeScript check |
@@ -78,3 +77,4 @@ _(empty — next up: T0.2 on branch `arch/tts/t0.2`, pending review)_
 
 - Architecture deviation: `@vitejs/plugin-react` has no 7.x release. Used 5.2.x, whose peer range supports Vite 7; confirmed against npm registry metadata.
 - `npm ci` reports three dev dependency advisories through Vitest: one moderate and two critical. Fix requires Vitest 5.x, outside the architecture's specified 3.x stack; recorded for review without changing that decision.
+- T0.2: no architecture deviations. Verification ran on Python 3.12; pytest used `.venv/pytest-tmp` because the default system temp directory was inaccessible.
