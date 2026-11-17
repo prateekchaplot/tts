@@ -12,12 +12,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | ID | Branch | PR | Merge commit | Verified |
 |---|---|---|---|---|
 | T0.1 | `arch/tts/t0.1` | [#1](https://github.com/prateekchaplot/tts/pull/1) | `0018cb8db3a3e169021a70d010325a6d2a19dfaa` | Editable install on Python 3.12; `tts --version` → `0.1.0`; `npm ci`; `git diff --check` |
+| T0.2 | `arch/tts/t0.2` | [#2](https://github.com/prateekchaplot/tts/pull/2) | `9839b9ef8c4e5adea2b5e6e87f6fa5af017ccce1` | 5 unit tests; Ruff check/format; strict mypy; `git diff --check` |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T0.2 | Config + logging | `arch/tts/t0.2` | `pytest --basetemp=.venv/pytest-tmp tests/unit` (5 passed); `ruff check src/tts tests/unit`; `ruff format --check src/tts tests/unit`; `mypy --strict src/tts`; `git diff --check` | Implemented; PR pending |
+_(empty — next up: T0.3)_
 
 ## Remaining
 
