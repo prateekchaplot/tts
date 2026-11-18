@@ -148,7 +148,7 @@ Dependency direction is strictly downward: `api → jobs → {engine, timing, su
 | Backend tests | `pytest` | 8.x (+ `pytest-asyncio`, `httpx`) | unit + integration (ASGI via httpx) |
 | Lint/format (py) | `ruff` | latest | lint + format in one tool |
 | Typecheck (py) | `mypy` | latest | strict on `src/tts` |
-| Lint/format (ts) | `eslint` 9 + `prettier` 3 | latest | standard React config |
+| Lint/format (ts) | `eslint` 9 + `typescript-eslint` 8 + `eslint-plugin-react-hooks` 7 + `prettier` 3 | latest | standard React + TypeScript config; `no-explicit-any` enforced |
 | Package/build | `hatchling` wheel; `pip`/`npm` lockfiles | — | wheel bundles `frontend/dist`; entry point `tts` |
 | CI | GitHub Actions | — | lint → unit (ubuntu+windows) → integration+E2E (ubuntu, cached voice) |
 | Auth | none | — | loopback-only binding is the boundary (A-4) |
@@ -636,9 +636,9 @@ sequenceDiagram
 
 **Routing:** none — a single page at `/`. Sections stack vertically: ErrorBanner → InputPanel → VoicePanel → GenerateBar → PlaybackPanel → HistoryPanel (collapsed by default on narrow viewports).
 
-**State:** one `AppContext` with `useReducer`. The full action set is declared once in `state/appContext.tsx` (task T3.1) and extended only via the shared-file protocol: `SET_INPUT`, `SET_SOURCE_FILE`, `SET_VOICE`, `SET_RATE`, `SET_VOLUME`, `GENERATION_CREATED`, `GENERATION_PROGRESS`, `GENERATION_SUCCEEDED`, `GENERATION_FAILED`, `GENERATION_CANCELLED`, `SELECT_HISTORY_ITEM`, `HISTORY_LOADED`, `HISTORY_DELETED`, `SET_ERROR`, `CLEAR_ERROR`. State shape: `{inputText, sourceFilename, voices, selectedVoiceId, rate, volume, current: {id, status, sentenceIndex, sentenceCount, detail?, audioUrl?}, history: {items, total}, error}`.
+**State:** one `AppContext` with `useReducer`. The full action set is declared once in `state/appContext.tsx` (created in T0.5; T3.1 is its only further editor) and extended only via the shared-file protocol: `SET_INPUT`, `SET_SOURCE_FILE`, `VOICES_LOADED`, `SET_VOICE`, `SET_RATE`, `SET_VOLUME`, `GENERATION_CREATED`, `GENERATION_PROGRESS`, `GENERATION_SUCCEEDED`, `GENERATION_FAILED`, `GENERATION_CANCELLED`, `SELECT_HISTORY_ITEM`, `HISTORY_LOADED`, `HISTORY_DELETED`, `SET_ERROR`, `CLEAR_ERROR`. State shape: `{inputText, sourceFilename, voices, selectedVoiceId, rate, volume, current: {id, status, sentenceIndex, sentenceCount, detail?, audioUrl?}, history: {items, total}, error}`.
 
-**Data fetching:** `api/client.ts` implements `ApiInterface` (`getHealth, listVoices, previewVoice, uploadFile, createGeneration, getGeneration, listGenerations, getAudioBlob, getSubtitlesText, openEventStream, cancelGeneration, deleteGeneration, getSettings, putSettings`) against §9; `mock.ts` implements the same interface with in-memory fake data (`VITE_API_MODE=mock`, used by P3 tasks before the API lands). `openEventStream` wraps `EventSource` and dispatches the reducer actions above; terminal events close the stream and fetch detail + audio blob.
+**Data fetching:** `api/client.ts` implements `ApiInterface` (`getHealth, listVoices, previewVoice, uploadFile, createGeneration, getGeneration, listGenerations, getAudioBlob, getSubtitlesText, openEventStream, cancelGeneration, deleteGeneration, getSettings, putSettings`) against §9; `mock.ts` implements the same interface with in-memory fake data (`VITE_API_MODE=mock`, used by P3 tasks before the API lands). `openEventStream` wraps `EventSource`, invokes a typed callback per named event, and closes the stream on terminal events; callers dispatch the reducer actions above and fetch detail + audio blob on success.
 
 **Component hierarchy and pages:**
 
