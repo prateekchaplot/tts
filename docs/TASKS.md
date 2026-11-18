@@ -20,7 +20,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-_(empty — next up: T0.5)_
+| T0.5 | Frontend scaffold + contracts | `arch/tts/t0.5` | 34 vitest tests; `tsc --noEmit`; ESLint; Prettier; `vite build`; mock-mode build; 32 pytest; Ruff; strict mypy; `git diff --check` | PR open, pending review |
 
 ## Remaining
 
@@ -28,7 +28,6 @@ _(empty — next up: T0.5)_
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T0.5 | Frontend scaffold + contracts | `frontend/` | T0.1 | Build, mock placeholder, strict TypeScript check |
 | T0.6 | CI | `.github/workflows/ci.yml` | T0.1 | Four-stage CI with voice cache step |
 
 ### P1 — Service layer
@@ -81,3 +80,6 @@ _(empty — next up: T0.5)_
 - T0.2: no architecture deviations. Verification ran on Python 3.12; pytest used `.venv/pytest-tmp` because the default system temp directory was inaccessible.
 - T0.3: §9.1 has no generic request-validation code; pydantic `RequestValidationError` maps to 422 `OUT_OF_RANGE` with `{field, reason}`, and unmapped HTTP errors map 404/405 → `NOT_FOUND`, others → `INTERNAL_ERROR`. Health counts `*.onnx` files directly to avoid depending on the T1.1 voice store. Error envelopes always carry a `details` key (`null` when absent).
 - T0.4 decisions: `Dal` takes an optional keyword `history_limit` (default 20) because §7.7 fixes `Dal(data_dir)` but eviction needs the `TTS_HISTORY_LIMIT` value; jobs/app pass `settings.history_limit` in later tasks. `get_settings`/`put_settings` are a pure kv store — lazy seeding with voice discovery stays in the T2.3 settings route so `history` does not import `voices`; T1.5 adds the NFR-05 consistency property tests. `get()` returns raw snake_case rows with JSON columns as strings; API-layer mapping to camelCase happens in P2. `delete()`/eviction remove the audio file before the row (idempotent on retry) inside the single RLock, and never inspect status — active-row gating is the caller's job.
+- T0.5 decisions: §12 lists `voices` in state but its action set had no way to populate it; added `VOICES_LOADED` to `appContext.tsx` and synced §12 in this PR (T3.1 depends on it). Added the frontend lint toolchain (`typescript-eslint`, `eslint-plugin-react-hooks`, `@eslint/js`, `globals`, flat `eslint.config.js`, Prettier config, `lint`/`format:check` scripts) because T0.6's CI runs eslint/prettier and no other task owns those files; §5's lint row names the packages. `package.json` changes follow the shared-file protocol and affect T0.6.
+- T0.5 mock: `api/mock.ts` is a working in-memory `ApiInterface` (sorted voices, valid silent-WAV preview, upload type/size checks, generate → progress → succeeded with synthetic timings/cues, SRT/VTT, settings validation, cancel/delete rules), not a stub, so P3 can build against it. `openEventStream(generationId, onEvent)` returns an unsubscribe function and emits typed events; components dispatch reducer actions, keeping `api/client.ts` React-free.
+- T0.5 build switch: `api/index.ts` exports `apiMode`; the shell shows a "Mock mode" badge so `VITE_API_MODE=mock` is observable in a build. Verified the live bundle tree-shakes the mock and vice versa. `frontend/dist` stays gitignored.
