@@ -15,12 +15,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T0.2 | `arch/tts/t0.2` | [#2](https://github.com/prateekchaplot/tts/pull/2) | `9839b9ef8c4e5adea2b5e6e87f6fa5af017ccce1` | 5 unit tests; Ruff check/format; strict mypy; `git diff --check` |
 | T0.3 | `arch/tts/t0.3` | [#3](https://github.com/prateekchaplot/tts/pull/3) | `40d2296e5bb18973fa7bb1878e2407db9d1d8ea6` | 14 unit tests; Ruff check/format; strict mypy; `git diff --check` |
 | T0.4 | `arch/tts/t0.4` | [#4](https://github.com/prateekchaplot/tts/pull/4) | `0817306b0ec9dea1959ed146675fa3a23dc90915` | 32 unit tests; Ruff check/format; strict mypy; `git diff --check` |
+| T0.5 | `arch/tts/t0.5` | [#5](https://github.com/prateekchaplot/tts/pull/5) | `a479bc1c1f85f8580e1875e3012f668da9b35291` | 34 vitest tests; `tsc --noEmit`; ESLint; Prettier; `vite build`; mock-mode build; 32 pytest; Ruff; strict mypy; `git diff --check` |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T0.5 | Frontend scaffold + contracts | `arch/tts/t0.5` | 34 vitest tests; `tsc --noEmit`; ESLint; Prettier; `vite build`; mock-mode build; 32 pytest; Ruff; strict mypy; `git diff --check` | PR open, pending review |
+| _(empty — next up: T0.6)_ | | | | |
 
 ## Remaining
 
