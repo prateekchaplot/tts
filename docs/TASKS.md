@@ -19,7 +19,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T0.4 | DB schema + DAL skeleton | `arch/tts/t0.4` | 32 unit tests; Ruff check/format; strict mypy; `git diff --check` | In review (PR pending) |
+| T0.4 | DB schema + DAL skeleton | `arch/tts/t0.4` | 32 unit tests; Ruff check/format; strict mypy; `git diff --check` | In review ([#4](https://github.com/prateekchaplot/tts/pull/4)) |
 
 ## Remaining
 
