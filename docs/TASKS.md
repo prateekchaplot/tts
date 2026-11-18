@@ -19,7 +19,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-_(empty — next up: T0.4)_
+| T0.4 | DB schema + DAL skeleton | `arch/tts/t0.4` | 32 unit tests; Ruff check/format; strict mypy; `git diff --check` | In review ([#4](https://github.com/prateekchaplot/tts/pull/4)) |
 
 ## Remaining
 
@@ -27,7 +27,6 @@ _(empty — next up: T0.4)_
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T0.4 | DB schema + DAL skeleton | `src/tts/history/`, `tests/unit/test_dal.py` | T0.2 | Schema migration, CRUD, active-row eviction protection, delete-with-file |
 | T0.5 | Frontend scaffold + contracts | `frontend/` | T0.1 | Build, mock placeholder, strict TypeScript check |
 | T0.6 | CI | `.github/workflows/ci.yml` | T0.1 | Four-stage CI with voice cache step |
 
@@ -80,3 +79,4 @@ _(empty — next up: T0.4)_
 - `npm ci` reports three dev dependency advisories through Vitest: one moderate and two critical. Fix requires Vitest 5.x, outside the architecture's specified 3.x stack; recorded for review without changing that decision.
 - T0.2: no architecture deviations. Verification ran on Python 3.12; pytest used `.venv/pytest-tmp` because the default system temp directory was inaccessible.
 - T0.3: §9.1 has no generic request-validation code; pydantic `RequestValidationError` maps to 422 `OUT_OF_RANGE` with `{field, reason}`, and unmapped HTTP errors map 404/405 → `NOT_FOUND`, others → `INTERNAL_ERROR`. Health counts `*.onnx` files directly to avoid depending on the T1.1 voice store. Error envelopes always carry a `details` key (`null` when absent).
+- T0.4 decisions: `Dal` takes an optional keyword `history_limit` (default 20) because §7.7 fixes `Dal(data_dir)` but eviction needs the `TTS_HISTORY_LIMIT` value; jobs/app pass `settings.history_limit` in later tasks. `get_settings`/`put_settings` are a pure kv store — lazy seeding with voice discovery stays in the T2.3 settings route so `history` does not import `voices`; T1.5 adds the NFR-05 consistency property tests. `get()` returns raw snake_case rows with JSON columns as strings; API-layer mapping to camelCase happens in P2. `delete()`/eviction remove the audio file before the row (idempotent on retry) inside the single RLock, and never inspect status — active-row gating is the caller's job.
