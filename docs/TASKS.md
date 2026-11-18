@@ -18,7 +18,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-_(empty — next up: T0.3)_
+| T0.3 | Error envelope + API skeleton | `arch/tts/t0.3` | 14 unit tests; Ruff check/format; strict mypy; `git diff --check` | [PR #3](https://github.com/prateekchaplot/tts/pull/3) open, pending review |
 
 ## Remaining
 
@@ -26,7 +26,6 @@ _(empty — next up: T0.3)_
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T0.3 | Error envelope + API skeleton | `src/tts/api/`, `src/tts/app.py`, `src/tts/types.py`, `tests/unit/test_errors.py` | T0.2 | Health response and exact error envelope behavior |
 | T0.4 | DB schema + DAL skeleton | `src/tts/history/`, `tests/unit/test_dal.py` | T0.2 | Schema migration, CRUD, active-row eviction protection, delete-with-file |
 | T0.5 | Frontend scaffold + contracts | `frontend/` | T0.1 | Build, mock placeholder, strict TypeScript check |
 | T0.6 | CI | `.github/workflows/ci.yml` | T0.1 | Four-stage CI with voice cache step |
@@ -79,3 +78,4 @@ _(empty — next up: T0.3)_
 - Architecture deviation: `@vitejs/plugin-react` has no 7.x release. Used 5.2.x, whose peer range supports Vite 7; confirmed against npm registry metadata.
 - `npm ci` reports three dev dependency advisories through Vitest: one moderate and two critical. Fix requires Vitest 5.x, outside the architecture's specified 3.x stack; recorded for review without changing that decision.
 - T0.2: no architecture deviations. Verification ran on Python 3.12; pytest used `.venv/pytest-tmp` because the default system temp directory was inaccessible.
+- T0.3: §9.1 has no generic request-validation code; pydantic `RequestValidationError` maps to 422 `OUT_OF_RANGE` with `{field, reason}`, and unmapped HTTP errors map 404/405 → `NOT_FOUND`, others → `INTERNAL_ERROR`. Health counts `*.onnx` files directly to avoid depending on the T1.1 voice store. Error envelopes always carry a `details` key (`null` when absent).
