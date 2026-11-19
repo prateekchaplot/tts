@@ -1,0 +1,4 @@
+{
+  "audio": { "quality": "medium" },
+  "espeak": { "voice": "en-us" }
+}
