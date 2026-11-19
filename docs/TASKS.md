@@ -17,12 +17,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T0.4 | `arch/tts/t0.4` | [#4](https://github.com/prateekchaplot/tts/pull/4) | `0817306b0ec9dea1959ed146675fa3a23dc90915` | 32 unit tests; Ruff check/format; strict mypy; `git diff --check` |
 | T0.5 | `arch/tts/t0.5` | [#5](https://github.com/prateekchaplot/tts/pull/5) | `a479bc1c1f85f8580e1875e3012f668da9b35291` | 34 vitest tests; `tsc --noEmit`; ESLint; Prettier; `vite build`; mock-mode build; 32 pytest; Ruff; strict mypy; `git diff --check` |
 | T0.6 | `arch/tts/t0.6` | [#6](https://github.com/prateekchaplot/tts/pull/6) | `cacfd8de820c503ab074b5b33f2cccd4d7a392d3` | Workflow YAML parses (4 jobs); Ruff check/format on `src/tts tests`; strict mypy; 32 pytest; ESLint; `tsc --noEmit`; 34 vitest; PR CI green (lint, unit ubuntu+windows, integration, e2e); voice cache saved (58 MB) |
+| T1.1 | `arch/tts/t1.1` | [#7](https://github.com/prateekchaplot/tts/pull/7) | `c6363891b660cc7cb013a16a01fe284676316931` | 43 unit tests (11 new); 3 integration tests vs `en_US-lessac-medium` (alignments supported, 2.73 s preview WAV); Ruff check/format; strict mypy; PR CI green (lint, unit ubuntu+windows, integration) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T1.1 | Voice store | `arch/tts/t1.1` | Unit: 43 pytest (11 new); integration: 3 passed against `en_US-lessac-medium` (alignments supported, 2.73 s preview WAV); Ruff check/format; strict mypy; `git diff --check` | PR open, pending review |
+| _(empty — next up: T1.2 / T1.3 / T1.4, parallel after T0.3)_ | | | | |
 
 ## Remaining
 
