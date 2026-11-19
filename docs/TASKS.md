@@ -16,20 +16,19 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T0.3 | `arch/tts/t0.3` | [#3](https://github.com/prateekchaplot/tts/pull/3) | `40d2296e5bb18973fa7bb1878e2407db9d1d8ea6` | 14 unit tests; Ruff check/format; strict mypy; `git diff --check` |
 | T0.4 | `arch/tts/t0.4` | [#4](https://github.com/prateekchaplot/tts/pull/4) | `0817306b0ec9dea1959ed146675fa3a23dc90915` | 32 unit tests; Ruff check/format; strict mypy; `git diff --check` |
 | T0.5 | `arch/tts/t0.5` | [#5](https://github.com/prateekchaplot/tts/pull/5) | `a479bc1c1f85f8580e1875e3012f668da9b35291` | 34 vitest tests; `tsc --noEmit`; ESLint; Prettier; `vite build`; mock-mode build; 32 pytest; Ruff; strict mypy; `git diff --check` |
+| T0.6 | `arch/tts/t0.6` | [#6](https://github.com/prateekchaplot/tts/pull/6) | `cacfd8de820c503ab074b5b33f2cccd4d7a392d3` | Workflow YAML parses (4 jobs); Ruff check/format on `src/tts tests`; strict mypy; 32 pytest; ESLint; `tsc --noEmit`; 34 vitest; PR CI green (lint, unit ubuntu+windows, integration, e2e); voice cache saved (58 MB) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T0.6 | CI | `arch/tts/t0.6` | Workflow YAML parses (4 jobs); `ruff check`/`format --check` on `src/tts tests`; strict mypy; 32 pytest; ESLint; `tsc --noEmit`; 34 vitest; PR CI run green (lint, unit ubuntu+windows, integration, e2e); voice cache saved | In review |
+| _(empty — next up: T1.1)_ | | | | |
 
 ## Remaining
 
 ### P0 — Foundation contracts
 
-| ID | Task | Files | Deps | Acceptance criteria (summary) |
-|---|---|---|---|---|
-| T0.6 | CI | `.github/workflows/ci.yml` | T0.1 | Four-stage CI with voice cache step |
+_All P0 tasks done._
 
 ### P1 — Service layer
 
