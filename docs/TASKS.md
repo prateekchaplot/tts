@@ -23,7 +23,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty — next up: T1.2 / T1.3 / T1.4, parallel after T0.3)_ | | | | |
+| T1.2 | Engine wrapper | `arch/tts/t1.2` | 52 unit tests (9 new); 6 integration tests vs `en_US-lessac-medium` (3 new); Ruff check/format; strict mypy | PR pending review |
 
 ## Remaining
 
@@ -36,7 +36,6 @@ _All P0 tasks done._
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
 | T1.1 | Voice store | `src/tts/voices/store.py` | T0.2 | Sorted voice metadata, alignment support, valid short preview WAV |
-| T1.2 | Engine wrapper | `src/tts/engine/piper_engine.py` | T0.2, T0.3 | Sentence synthesis, sample totals, rate effect, pre-start cancellation |
 | T1.3 | Timing reconcile | `src/tts/timing/reconcile.py` | T0.3 | Monotonic timings, honest degraded alignment, zero-phoneme handling |
 | T1.4 | Subtitles | `src/tts/subtitles/` | T0.3 | Cue boundary rules and byte-exact SRT/VTT fixtures |
 | T1.5 | History DAL completion | `src/tts/history/dal.py` | T0.4 | Consistent transactional deletion, eviction ordering, settings seeding |
@@ -88,3 +87,7 @@ _All P0 tasks done._
 - T1.1 environment finding: importing `onnxruntime` 1.32 crashed with an access violation on this machine because `C:\Windows\System32\MSVCP140.dll` was 14.27 (VS 2019 redist) while the pinned runtime needs a current one. Installing the latest VC++ 2015–2022 x64 redistributable (now 14.52) fixed it; `import piper` and real-voice tests run. T5.2 must document the VC++ redistributable as an install prerequisite (README/KNOWN_LIMITATIONS), since the packaged app fails the same way on a machine with an old redist.
 - T1.1 decisions: `store.py` follows §7.3's no-settings signatures by using a module-level voices dir set by `ensure_data_dirs(settings)`; using the store before that raises `RuntimeError`. Unknown/unsafe voice ids raise `VoiceNotFoundError` (a `LookupError`), which T2.1 maps to 422 `VOICE_NOT_FOUND` / 409 `NO_VOICES_INSTALLED`. `piper` is imported lazily inside `load_voice`/`preview_wav`/`install_voice`, so unit tests and the API import path never pay the onnxruntime cost. `supports_alignments` is read from the loaded session having a second output (the patched phoneme-width tensor, `/Ceil_output_0` on `en_US-lessac-medium`); a model without it loads unpatched and reports `False`. `VoiceInfo.language` comes from the config's `language.code`, falling back to the id prefix; voices with a missing/invalid `.onnx.json` are logged and skipped. Install delegate is `piper.download_voices.download_voice(name, voices_dir)`.
 - T1.1 shared file: `pyproject.toml` gains the `integration` pytest marker (append-only `[tool.pytest.ini_options]` config). Dependent tasks: T1.2–T1.6, T2.x, T4.1, T5.1, T5.3 add tests under `tests/integration` and must keep the marker registered. Consequence: T0.6's guarded integration CI stage now finds tests and runs `pytest tests/integration` against the cached voice.
+- T1.2 decisions: `char_offset_map` is authoritative — the engine validates each span (in bounds, non-overlapping) and calls `voice.synthesize(text[start:end])` per span rather than passing the whole text to piper's internal espeak splitter, which exposes no offsets and could disagree with the caller's segmentation. A span that piper renders as multiple chunks is concatenated (samples and alignments) so one span always yields one `SentenceAudio`; a span with no audio stays as an empty `SentenceAudio` with `supports_alignments=false`. `piper`/`SynthesisConfig` are imported lazily inside `synthesize` so `tts.engine` stays off the onnxruntime import path; unit tests stub `sys.modules["piper"]` to preserve T1.1's `preview_wav` isolation assertion.
+- T1.2 deviation (measurement): piper 1.8's stochastic duration predictor is sublinear at `length_scale=2` — rate 0.5 measures ~1.73x the rate 1.0 duration on `en_US-lessac-medium`, outside the AC's 10% band, so the strict duration-ratio check uses rate 1.25 (nominal 0.8x, measured ~0.82x) averaged over 3 runs; the rate→`length_scale=1/rate` mapping itself is unit-tested and slower rates still produce measurably longer audio. T5.3 should measure real rate/duration scaling before documenting it.
+- T1.2 environment note: a bare `pytest` run fails collection because `tests/unit/test_voices_store.py` and `tests/integration/test_voices_store.py` share a basename and neither directory is a package; CI passes because it runs each directory separately. New test files use unique names.
+- T1.2 local integration voice: `en_US-lessac-medium` was downloaded to the gitignored `.venv/tts-data/voices` and integration tests ran with `TTS_DATA_DIR=.venv/tts-data`.
