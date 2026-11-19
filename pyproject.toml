@@ -42,3 +42,6 @@ mypy_path = "src"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+  "integration: requires a real Piper voice in the local voice store (downloaded by CI)",
+]
