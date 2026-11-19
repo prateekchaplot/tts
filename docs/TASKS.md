@@ -21,7 +21,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty — next up: T0.6)_ | | | | |
+| T0.6 | CI | `arch/tts/t0.6` | Workflow YAML parses (4 jobs); `ruff check`/`format --check` on `src/tts tests`; strict mypy; 32 pytest; ESLint; `tsc --noEmit`; 34 vitest; PR CI run pending | In review |
 
 ## Remaining
 
@@ -84,3 +84,4 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 - T0.5 decisions: §12 lists `voices` in state but its action set had no way to populate it; added `VOICES_LOADED` to `appContext.tsx` and synced §12 in this PR (T3.1 depends on it). Added the frontend lint toolchain (`typescript-eslint`, `eslint-plugin-react-hooks`, `@eslint/js`, `globals`, flat `eslint.config.js`, Prettier config, `lint`/`format:check` scripts) because T0.6's CI runs eslint/prettier and no other task owns those files; §5's lint row names the packages. `package.json` changes follow the shared-file protocol and affect T0.6.
 - T0.5 mock: `api/mock.ts` is a working in-memory `ApiInterface` (sorted voices, valid silent-WAV preview, upload type/size checks, generate → progress → succeeded with synthetic timings/cues, SRT/VTT, settings validation, cancel/delete rules), not a stub, so P3 can build against it. `openEventStream(generationId, onEvent)` returns an unsubscribe function and emits typed events; components dispatch reducer actions, keeping `api/client.ts` React-free.
 - T0.5 build switch: `api/index.ts` exports `apiMode`; the shell shows a "Mock mode" badge so `VITE_API_MODE=mock` is observable in a build. Verified the live bundle tree-shakes the mock and vice versa. `frontend/dist` stays gitignored.
+- T0.6: `.github/workflows/ci.yml` chains lint → unit (ubuntu+windows) → integration → e2e with pip/npm/voice caches; voice cache key is `piper-voice-en_US-lessac-medium-v1`. Integration/e2e test steps are guarded because those suites land in T1.6/T5.1, so the skeleton repo is green while the stages stay wired. Downstream contract: T5.1 must add `tests/e2e/playwright.config.ts` (Playwright's default `testDir` is the config's own directory) and the workflow runs `npx playwright test` from `frontend/`. Ruff in CI is scoped to `src/tts tests` because ruff 0.17.5 reformats the Python block inside `docs/ARCHITECTURE.md`; prettier's `format:check` only passes on an LF checkout (this Windows clone uses `core.autocrlf=true`).
