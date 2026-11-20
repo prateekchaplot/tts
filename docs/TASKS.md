@@ -26,7 +26,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty — next up: T1.5 on branch `arch/tts/t1.5`, pending review)_ | | | | |
+| T1.5 | History DAL completion | `arch/tts/t1.5` | 103 unit tests (16 new); Ruff check/format; strict mypy; `git diff --check`; `npm run lint`/`typecheck`/`test` (34 vitest) | PR open, awaiting review |
 
 ## Remaining
 
@@ -38,8 +38,6 @@ _All P0 tasks done._
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T1.4 | Subtitles | `src/tts/subtitles/` | T0.3 | Cue boundary rules and byte-exact SRT/VTT fixtures |
-| T1.5 | History DAL completion | `src/tts/history/dal.py` | T0.4 | Consistent transactional deletion, eviction ordering, settings seeding |
 | T1.6 | Jobs manager | `src/tts/jobs/` | T1.2, T1.3, T1.4, T1.5 | Progress/success, atomic failure cleanup, cancellation, sequential jobs |
 
 ### P2 — HTTP surface
@@ -99,3 +97,8 @@ _All P0 tasks done._
 - T1.4 shared-file addition: `.gitattributes` pins `tests/fixtures/subtitles/**` to LF, so the byte-exact golden tests also pass on Windows clones (`core.autocrlf=true`). Downstream tasks adding golden caption fixtures must put them in that directory or extend the rule.
 - T1.4 follow-up for T4.1: `frontend/src/api/mock.ts:buildCues` does not implement sentence grouping, the 1 200 ms floor, or the audio-duration cap. T4.1's mock/live parity pass should either mirror `tts.subtitles.cues` or explicitly accept the mock-only simplification.
 - T1.4 downstream contract: T1.6 must supply `build_cues` with `(char_start, char_end, first_word_idx)` per `SynthesisResult` sentence, where `first_word_idx` indexes the final word list; empty sentences can pass a repeated index and are skipped.
+- T1.5 decisions: §7.7's invariant "never leave a row referencing a missing audio file" requires the **row to be deleted before its file** (the T0.4 skeleton deleted the file first, so a failure of the row delete left a row pointing at a missing WAV). `delete()` now removes the row in a transaction and the file afterwards, both under the one `RLock`; a file the OS refuses to unlink (Windows file lock) is remembered in `_pending_removals` and retried on the next delete, eviction, or `close()`, so deletion stays real (§8.5). `delete()` raises the new `ActiveGenerationError` for a `queued`/`running`/`cancelling` row — §7.7's Must-not is binding, and T0.4's "the caller gates active rows" note is superseded.
+- T1.5 downstream contracts: **T2.2** must catch `ActiveGenerationError` from `dal.delete()` and map it to 409 `GENERATION_BUSY` (§9.2) instead of 404; **T2.3** should call the new `dal.seed_settings(default_voice_id)` for the §8.2 lazy seeding (the DAL cannot import `voices` — §7.7 allows only `config` + stdlib `sqlite3` — so the caller supplies the voice id); **T1.6** must pass **every** in-flight id to `evict_to_limit(active_ids)`, not just the new one, because the DAL protects exactly the ids it is given (§8.5 updated to say so).
+- T1.5 eviction ordering: the system clock is far too coarse to order rapid inserts (2000 `datetime.now()` calls on this machine produced 3 distinct values), so `created_at` is now emitted strictly increasing — the clock value is nudged forward by 1 µs when it would repeat, and a reopened DAL resumes after the newest stored row. History order (newest first) and eviction order (oldest first) therefore follow insertion order instead of an arbitrary UUID tiebreaker. `created_at` stays ISO-8601 UTC; the stored format gained microsecond precision.
+- T1.5 settings: `put_settings` now rejects keys outside `{defaultVoiceId, rate, volume}` with `ValueError` and `get_settings` ignores unknown stored keys, enforcing §8.2's key set in the DAL. Lazy seeding stays in the API layer (T2.3), as T0.4 decided.
+- T1.5 environment finding: `tests/integration/test_piper_engine.py::test_rate_scales_duration_within_ten_percent` is flaky (measured ratio 0.814–0.913 over 10 attempts against the [0.72, 0.88] band; 6/10 pass) because piper 1.8's duration predictor is stochastic. It is pre-existing (T1.2) and unrelated to T1.5; the fix is tracked as a separate maintenance PR so this task does not edit a file owned by T1.2 (§16).
