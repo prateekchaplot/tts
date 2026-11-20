@@ -62,7 +62,7 @@ class Env:
 
 
 def _app(settings: Settings, dal: Dal, jobs: FakeJobs) -> FastAPI:
-    app = create_app(settings)
+    app = create_app(settings, bootstrap_on_startup=False)
     app.state.dal = dal
     app.state.jobs = jobs
     return app
@@ -86,7 +86,6 @@ def env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Any:
     app = _app(settings, dal, jobs)
     with TestClient(app) as client:
         yield Env(client=client, app=app, dal=dal, jobs=jobs, settings=settings)
-    dal.close()
 
 
 def _succeeded_row(env: Env, text: str = "Hello world this is a test") -> tuple[str, Path]:

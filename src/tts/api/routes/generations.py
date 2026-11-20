@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import threading
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
@@ -20,6 +19,7 @@ from typing import Annotated, Any, cast
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import FileResponse, PlainTextResponse, Response, StreamingResponse
 
+from tts.api.dependencies import get_dal, get_jobs
 from tts.api.errors import AppError
 from tts.api.schemas import (
     CueSchema,
@@ -59,42 +59,17 @@ _NO_VOICES_MESSAGE = (
 )
 _RATE_RANGE = (0.5, 2.0)
 _VOLUME_RANGE = (0.0, 1.0)
-_INIT_LOCK = threading.Lock()
-"""Guards the lazy creation of app-scoped DAL and job manager (see §14.2 T2.3)."""
-
-
 # -- app-scoped services -----------------------------------------------------
 
 
 def _dal(request: Request) -> Dal:
-    """Return the app's DAL, creating it from settings on first use.
-
-    T2.3 owns startup wiring, so this route stays self-contained until then by
-    attaching the shared services to ``app.state`` lazily. An injected
-    ``app.state.dal`` (tests, later startup code) always wins.
-    """
-    dal = getattr(request.app.state, "dal", None)
-    if dal is None:
-        with _INIT_LOCK:
-            dal = getattr(request.app.state, "dal", None)
-            if dal is None:
-                settings: Settings = request.app.state.settings
-                dal = Dal(settings.data_dir, history_limit=settings.history_limit)
-                request.app.state.dal = dal
-    return cast(Dal, dal)
+    """Return the shared application DAL."""
+    return get_dal(request)
 
 
 def _jobs(request: Request) -> JobManager:
-    """Return the app's job manager, creating it from settings on first use."""
-    jobs = getattr(request.app.state, "jobs", None)
-    if jobs is None:
-        with _INIT_LOCK:
-            jobs = getattr(request.app.state, "jobs", None)
-            if jobs is None:
-                settings: Settings = request.app.state.settings
-                jobs = JobManager(_dal(request), settings)
-                request.app.state.jobs = jobs
-    return cast(JobManager, jobs)
+    """Return the shared application job manager."""
+    return get_jobs(request)
 
 
 # -- small helpers -----------------------------------------------------------
