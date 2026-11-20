@@ -10,7 +10,7 @@ import sqlite3
 import threading
 import uuid
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +21,32 @@ SCHEMA_VERSION = 1
 
 HISTORY_LIMIT_DEFAULT = 20
 """Fallback row budget used when the caller does not pass ``history_limit``."""
+
+DEFAULT_RATE = 1.0
+"""Default speaking rate seeded into ``app_settings`` (§8.2)."""
+
+DEFAULT_VOLUME = 1.0
+"""Default volume seeded into ``app_settings`` (§8.2)."""
+
+_ACTIVE_STATUSES = frozenset({"queued", "running", "cancelling"})
+"""Generation statuses that are still in flight and must never be deleted."""
+
+_SETTINGS_KEYS = frozenset({"defaultVoiceId", "rate", "volume"})
+"""The only ``app_settings`` keys the schema allows (§8.2)."""
+
+
+class ActiveGenerationError(RuntimeError):
+    """Raised when a delete targets a generation that is still in flight.
+
+    ARCHITECTURE §7.7 forbids the DAL from deleting a row whose id is active
+    (``queued``/``running``/``cancelling``). The API layer maps this to the
+    ``GENERATION_BUSY`` 409 response (§9.2).
+    """
+
+    def __init__(self, generation_id: str) -> None:
+        super().__init__(f"generation {generation_id} is active and cannot be deleted")
+        self.generation_id = generation_id
+
 
 _RESULT_FIELDS = frozenset(
     {
@@ -41,18 +67,37 @@ _MIGRATIONS_DIR = Path(__file__).with_name("migrations")
 
 
 def _utc_now() -> str:
-    """Return the current UTC time as an ISO-8601 string with millisecond precision."""
-    return datetime.now(UTC).isoformat(timespec="milliseconds")
+    """Return the current UTC time as an ISO-8601 string with microsecond precision."""
+    return datetime.now(UTC).isoformat(timespec="microseconds")
 
 
-def _remove_file(path: str | None) -> None:
-    """Delete an audio file, tolerating a file that is already gone (idempotent retry)."""
+def _parse_timestamp(value: str) -> datetime | None:
+    """Parse a stored ``created_at`` value, tolerating a malformed one."""
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed
+
+
+def _remove_file(path: str | None) -> bool:
+    """Delete an audio file, tolerating a file that is already gone.
+
+    Returns ``True`` when the file is gone afterwards and ``False`` when the
+    operating system refused the removal (for example a Windows file lock).
+    """
     if not path:
-        return
+        return True
     try:
         Path(path).unlink()
     except FileNotFoundError:
         logger.debug("Audio file already missing: %s", path)
+        return True
+    except OSError:
+        return False
+    return True
 
 
 class Dal:
@@ -71,15 +116,19 @@ class Dal:
         self._db_path = self._data_dir / "library.db"
         self._history_limit = history_limit
         self._lock = threading.RLock()
+        self._pending_removals: set[str] = set()
+        self._last_created_at: datetime | None = None
         self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
         with self._lock:
             self._conn.execute("PRAGMA journal_mode = WAL")
             self._migrate()
+            self._last_created_at = self._latest_created_at()
 
     def close(self) -> None:
         """Close the underlying database connection."""
         with self._lock:
+            self._flush_pending_removals()
             self._conn.close()
 
     # -- schema ---------------------------------------------------------------
@@ -103,6 +152,30 @@ class Dal:
 
     def _user_version(self) -> int:
         return int(self._conn.execute("PRAGMA user_version").fetchone()[0])
+
+    def _latest_created_at(self) -> datetime | None:
+        """Return the newest stored ``created_at``, so a restart keeps ordering."""
+        row = self._conn.execute(
+            "SELECT created_at FROM generations ORDER BY created_at DESC LIMIT 1"
+        ).fetchone()
+        if row is None:
+            return None
+        return _parse_timestamp(row["created_at"])
+
+    def _next_created_at(self) -> str:
+        """Return a timestamp strictly greater than every timestamp before it.
+
+        The system clock is too coarse to order rapid inserts (thousands of
+        calls can share a single tick), so the clock value is nudged forward
+        when it would repeat or move backwards. History order (newest first)
+        and eviction order (oldest first) then follow insertion order instead
+        of an arbitrary id tiebreaker (§8.5).
+        """
+        now = _parse_timestamp(_utc_now()) or datetime.now(UTC)
+        if self._last_created_at is not None and now <= self._last_created_at:
+            now = self._last_created_at + timedelta(microseconds=1)
+        self._last_created_at = now
+        return now.isoformat(timespec="microseconds")
 
     def _apply_script(self, sql: str, version: int) -> None:
         # executescript() commits any open transaction first, so the migration
@@ -140,7 +213,7 @@ class Dal:
                 """,
                 (
                     generation_id,
-                    _utc_now(),
+                    self._next_created_at(),
                     source_type,
                     text,
                     input_filename,
@@ -214,40 +287,91 @@ class Dal:
     def delete(self, generation_id: str) -> bool:
         """Delete a generation row and its audio file inside one critical section.
 
-        Returns ``False`` when the row does not exist. Callers are responsible
-        for refusing to delete active (queued/running/cancelling) generations.
+        Returns ``False`` when the row does not exist. Raises
+        ``ActiveGenerationError`` when the generation is still in flight; the
+        DAL never deletes an active row (§7.7).
+
+        The row is removed before its file so that a failure between the two
+        steps can never leave a row that references a missing audio file
+        (§7.7). A file the operating system refuses to remove is remembered and
+        retried on the next delete, eviction, or close.
         """
-        with self._lock, self._conn:
+        with self._lock:
+            self._flush_pending_removals()
+            found, audio_path = self._delete_row(generation_id)
+            if not found:
+                return False
+            self._remove_audio(audio_path)
+            return True
+
+    def _delete_row(self, generation_id: str) -> tuple[bool, str | None]:
+        """Delete one row inside a transaction; return ``(found, audio_path)``.
+
+        Raises ``ActiveGenerationError`` when the row is still active, leaving
+        the row and its file untouched.
+        """
+        with self._conn:
             row = self._conn.execute(
-                "SELECT audio_path FROM generations WHERE id = ?", (generation_id,)
+                "SELECT status, audio_path FROM generations WHERE id = ?", (generation_id,)
             ).fetchone()
             if row is None:
-                return False
-            # File first: if this raises, the row survives for an idempotent retry.
-            _remove_file(row["audio_path"])
+                return False, None
+            if row["status"] in _ACTIVE_STATUSES:
+                raise ActiveGenerationError(generation_id)
             self._conn.execute("DELETE FROM generations WHERE id = ?", (generation_id,))
-        return True
+        return True, row["audio_path"]
+
+    def _remove_audio(self, path: str | None) -> None:
+        """Remove an audio file, deferring the removal when the OS refuses."""
+        if not path:
+            return
+        if _remove_file(path):
+            self._pending_removals.discard(path)
+            return
+        self._pending_removals.add(path)
+        logger.warning("Could not remove audio file %s; removal deferred", path)
+
+    def _flush_pending_removals(self) -> None:
+        """Retry removals deferred by an earlier operating-system refusal."""
+        if not self._pending_removals:
+            return
+        for path in sorted(self._pending_removals):
+            if _remove_file(path):
+                self._pending_removals.discard(path)
+        if self._pending_removals:
+            logger.warning("%d audio file(s) still pending removal", len(self._pending_removals))
 
     def evict_to_limit(self, active_ids: set[str] | None = None) -> builtins.list[str]:
         """Delete oldest rows beyond ``history_limit`` and return their ids.
 
-        Ids in ``active_ids`` (queued/running/cancelling) are never evicted; the
-        row count may therefore stay above the limit while they are active.
+        Ids in ``active_ids`` are never evicted; the row count may therefore
+        stay above the limit while they are active. The caller owns the
+        active set and must pass every in-flight id, not just the new one
+        (§8.5).
         """
         active = active_ids or set()
         deleted: list[str] = []
-        with self._lock, self._conn:
+        with self._lock:
+            self._flush_pending_removals()
             rows = self._conn.execute(
                 "SELECT id, audio_path FROM generations ORDER BY created_at ASC, id ASC"
             ).fetchall()
+            victims = []
             for row in rows:
                 if len(rows) - len(deleted) <= self._history_limit:
                     break
                 if row["id"] in active:
                     continue
-                _remove_file(row["audio_path"])
-                self._conn.execute("DELETE FROM generations WHERE id = ?", (row["id"],))
+                victims.append(row)
                 deleted.append(row["id"])
+            if victims:
+                with self._conn:
+                    self._conn.executemany(
+                        "DELETE FROM generations WHERE id = ?",
+                        [(victim["id"],) for victim in victims],
+                    )
+                for victim in victims:
+                    self._remove_audio(victim["audio_path"])
         if deleted:
             logger.warning("Evicted %d generation(s): %s", len(deleted), ", ".join(deleted))
         return deleted
@@ -255,11 +379,18 @@ class Dal:
     # -- settings -------------------------------------------------------------
 
     def get_settings(self) -> dict[str, Any]:
-        """Return persisted settings as a dict (empty until something is stored)."""
+        """Return persisted settings as a dict (empty until something is stored).
+
+        Keys outside the §8.2 set and malformed values are ignored so the API
+        always sees the documented shape.
+        """
         with self._lock:
             rows = self._conn.execute("SELECT key, value FROM app_settings").fetchall()
         settings: dict[str, Any] = {}
         for row in rows:
+            if row["key"] not in _SETTINGS_KEYS:
+                logger.warning("Ignoring unknown app_settings key %r", row["key"])
+                continue
             try:
                 settings[row["key"]] = json.loads(row["value"])
             except json.JSONDecodeError:
@@ -267,7 +398,14 @@ class Dal:
         return settings
 
     def put_settings(self, patch: Mapping[str, Any]) -> dict[str, Any]:
-        """Upsert a settings patch and return the full persisted settings dict."""
+        """Upsert a settings patch and return the full persisted settings dict.
+
+        Only the three keys defined in §8.2 are accepted; an unknown key
+        raises ``ValueError``.
+        """
+        unknown = set(patch) - _SETTINGS_KEYS
+        if unknown:
+            raise ValueError(f"unknown settings key(s): {', '.join(sorted(unknown))}")
         with self._lock, self._conn:
             for key, value in patch.items():
                 self._conn.execute(
@@ -277,4 +415,22 @@ class Dal:
                     """,
                     (key, json.dumps(value)),
                 )
+        return self.get_settings()
+
+    def seed_settings(self, default_voice_id: str) -> dict[str, Any]:
+        """Write the §8.2 defaults for every key that is not stored yet.
+
+        The DAL cannot discover voices — §7.7 limits it to ``config`` and
+        stdlib ``sqlite3`` — so the caller supplies the default voice id.
+        Stored values are never overwritten.
+        """
+        defaults: dict[str, Any] = {
+            "defaultVoiceId": default_voice_id,
+            "rate": DEFAULT_RATE,
+            "volume": DEFAULT_VOLUME,
+        }
+        stored = self.get_settings()
+        missing = {key: value for key, value in defaults.items() if key not in stored}
+        if missing:
+            self.put_settings(missing)
         return self.get_settings()
