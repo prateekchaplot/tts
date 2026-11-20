@@ -24,7 +24,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty — next up: T1.3 on branch `arch/tts/t1.3`, pending review)_ | | | | |
+| T1.3 | Timing reconcile | `arch/tts/t1.3` | 66 unit tests (14 new); Ruff check/format; strict mypy; 6 integration tests; real-voice manual check (`en_US-lessac-medium`, ratio 0.909, monotonic) | branch open, pending review |
 
 ## Remaining
 
@@ -36,8 +36,6 @@ _All P0 tasks done._
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T1.1 | Voice store | `src/tts/voices/store.py` | T0.2 | Sorted voice metadata, alignment support, valid short preview WAV |
-| T1.3 | Timing reconcile | `src/tts/timing/reconcile.py` | T0.3 | Monotonic timings, honest degraded alignment, zero-phoneme handling |
 | T1.4 | Subtitles | `src/tts/subtitles/` | T0.3 | Cue boundary rules and byte-exact SRT/VTT fixtures |
 | T1.5 | History DAL completion | `src/tts/history/dal.py` | T0.4 | Consistent transactional deletion, eviction ordering, settings seeding |
 | T1.6 | Jobs manager | `src/tts/jobs/` | T1.2, T1.3, T1.4, T1.5 | Progress/success, atomic failure cleanup, cancellation, sequential jobs |
@@ -92,3 +90,6 @@ _All P0 tasks done._
 - T1.2 deviation (measurement): piper 1.8's stochastic duration predictor is sublinear at `length_scale=2` — rate 0.5 measures ~1.73x the rate 1.0 duration on `en_US-lessac-medium`, outside the AC's 10% band, so the strict duration-ratio check uses rate 1.25 (nominal 0.8x, measured ~0.82x) averaged over 3 runs; the rate→`length_scale=1/rate` mapping itself is unit-tested and slower rates still produce measurably longer audio. T5.3 should measure real rate/duration scaling before documenting it.
 - T1.2 environment note: a bare `pytest` run fails collection because `tests/unit/test_voices_store.py` and `tests/integration/test_voices_store.py` share a basename and neither directory is a package; CI passes because it runs each directory separately. New test files use unique names.
 - T1.2 local integration voice: `en_US-lessac-medium` was downloaded to the gitignored `.venv/tts-data/voices` and integration tests ran with `TTS_DATA_DIR=.venv/tts-data`.
+- T1.3 decisions: `timing/` also ships an `__init__.py` (a package needs one; §6 lists only `reconcile.py`). `split_words` is exported so callers group text with the same whitespace tokenizer; because a sentence below threshold collapses to exactly one entry, T1.6 should take per-sentence entry counts by deriving on a single-sentence `SynthesisResult` rather than assuming one entry per token. Matching removes piper's `^`/`$`/`_` and espeak's `" "` from both sequences — the space removal is required because espeak expands numbers into several words (`42` → `fˈɔːɹti tˈuː`) while punctuation-only tokens such as `—` phonemize to nothing. A word counts as aligned when the longest contiguous `difflib` match covers ≥ 60% of its phonemes; the sentence collapse threshold is the same 60% and is inclusive (`3/5` stays, `2/5` collapses). `aligned_word_ratio` counts every token, so a collapsed sentence contributes its token count as unaligned; `-1.0` is returned only when `SynthesisResult.supports_alignments` is false or there are no sentences, and in that case no phonemization is attempted. Timing is accumulated in exact milliseconds across sentences and rounded half-up per word, then clamped into `[previous_end, sentence_end]`, so integer rounding cannot break monotonicity.
+- T1.3 real-voice check: manual run on `en_US-lessac-medium` with "Emoji 🙂 stays honest. Yes — indeed, the 42 dogs rest!" reconciled 10/11 tokens (ratio 0.909), monotonic; `—` produced the expected zero-width unaligned entry, and espeak expands 🙂 into "slightly smiling face", which reconciles honestly. The emoji unit fixture uses a synthetic zero-phoneme voice because real espeak speaks emoji names.
+- T1.3 environment note: `.venv/pytest-tmp` became undeletable (`WinError 5`) on this machine, so verification used fresh `--basetemp .venv/ptmp-*` directories; the default system temp directory remains inaccessible (see T0.2).
