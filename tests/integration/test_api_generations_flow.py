@@ -51,8 +51,6 @@ def env(tmp_path_factory: pytest.TempPathFactory) -> Iterator[Any]:
     app.state.jobs = jobs
     with TestClient(app) as client:
         yield client, dal, jobs
-    jobs.close()
-    dal.close()
 
 
 def test_create_stream_detail_media_and_delete(env: Any) -> None:

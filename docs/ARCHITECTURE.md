@@ -181,6 +181,7 @@ tts/
 │   ├── api/
 │   │   ├── __init__.py        # ROUTERS list (append-only registry)
 │   │   ├── errors.py          # AppError exception + error envelope + codes
+│   │   ├── dependencies.py    # app-scoped DAL and jobs construction
 │   │   ├── schemas.py         # pydantic request/response models (mirrors §9)
 │   │   └── routes/
 │   │       ├── health.py      # GET /api/health
@@ -716,7 +717,7 @@ Format: **ID** — description · files · deps · spec refs · acceptance crite
 **P2 (parallel after P1; each route file has one owner)**
 - **T2.1** — Uploads + voices routes: `api/routes/uploads.py`, `api/routes/voices.py`. Deps: T0.3, T1.1. Refs: §9.2. AC: upload happy path returns text identical to file bytes decoded; `.pdf` → 415 with the accepted-types message; >2 MB → 413; non-UTF-8/16 → 415; preview endpoint returns valid WAV; empty store → 409 `NO_VOICES_INSTALLED`.
 - **T2.2** — Generations routes: `api/routes/generations.py` (all endpoints of §9.2 for this resource incl. audio, subtitles, events, cancel, delete). Deps: T0.3, T1.6. Refs: §9.2, §10. AC: full integration — create returns 202; SSE replays state on reconnect; out-of-range rate → 422 `OUT_OF_RANGE` with details; empty text → 422 `EMPTY_INPUT`; unknown id → 404; audio/subtitles before success → 409 `GENERATION_NOT_READY`; bad format → 400; `Content-Disposition` naming matches the §9.2 rule; delete of a running job → 409.
-- **T2.3** — Settings route + first-run bootstrap: `api/routes/settings.py`; `jobs/manager.py:bootstrap` (online-once default-voice download with offline fallback of §10.4). Deps: T0.3, T1.6. Refs: §9.2 settings, §10.4. AC: GET seeds defaults lazily; PUT partial update persists only given keys; unknown voice in PUT → 422; bootstrap with no network leaves app serving and health reporting 0 voices.
+- **T2.3** — Settings route + first-run bootstrap: `api/routes/settings.py`, shared app services in `api/dependencies.py`, `api/__init__.py` router registration, `api/schemas.py`, `api/routes/{health,voices,generations}.py`, `app.py` lifespan, and `__main__.py` CLI. Reuse `jobs/manager.py:bootstrap` (online-once default-voice download with offline fallback of §10.4). Deps: T0.3, T1.6. Refs: §9.2 settings, §9.3 CLI, §10.4. AC: GET seeds defaults lazily; PUT partial update persists only given keys; unknown voice in PUT → 422; persisted default is reflected by health and voice-list responses; `tts` serves the local app and installs voices; bootstrap with no network leaves app serving and health reporting 0 voices.
 
 **P3 (parallel with P2; frontend runs in mock mode)**
 - **T3.1** — App shell + input + voice + generate: `App.tsx`, `ErrorBanner`, `InputPanel`, `VoicePanel`, `GenerateBar` + context wiring (context itself was created in T0.5; T3.1 is its only further editor). Deps: T0.5. Refs: §12. AC: paste + upload render text; unsupported file shows accepted-types message without generating (AC3); empty-text generate shows validation message without a request (AC4); sliders clamp into §9.2 ranges and show numeric values (AC6); generate button disabled with explanation when 0 voices; voice preview plays.

@@ -170,6 +170,8 @@ class SettingsResponse(ContractModel):
 
 
 class SettingsPatch(ContractModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True, extra="forbid")
+
     default_voice_id: str | None = None
     rate: float | None = None
     volume: float | None = None

@@ -25,7 +25,7 @@ def _settings(tmp_path: Path) -> Settings:
 
 
 def _client(tmp_path: Path) -> TestClient:
-    return TestClient(create_app(_settings(tmp_path)))
+    return TestClient(create_app(_settings(tmp_path), bootstrap_on_startup=False))
 
 
 def test_upload_returns_decoded_text_and_size(tmp_path: Path) -> None:

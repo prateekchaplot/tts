@@ -53,7 +53,7 @@ def _test_app() -> FastAPI:
 
 
 def test_health_body_matches_contract(tmp_path: Path) -> None:
-    with TestClient(create_app(_settings(tmp_path))) as client:
+    with TestClient(create_app(_settings(tmp_path), bootstrap_on_startup=False)) as client:
         response = client.get("/api/health")
 
     assert response.status_code == 200
@@ -73,14 +73,14 @@ def test_health_counts_voice_models_in_the_store(tmp_path: Path) -> None:
     (voices_dir / "de_DE-thorsten-medium.onnx").write_bytes(b"")
     (voices_dir / "en_US-lessac-medium.onnx.json").write_text("{}", encoding="utf-8")
 
-    with TestClient(create_app(_settings(tmp_path))) as client:
+    with TestClient(create_app(_settings(tmp_path), bootstrap_on_startup=False)) as client:
         response = client.get("/api/health")
 
     assert response.json()["voicesInstalled"] == 2
 
 
 def test_unknown_route_returns_not_found_envelope(tmp_path: Path) -> None:
-    with TestClient(create_app(_settings(tmp_path))) as client:
+    with TestClient(create_app(_settings(tmp_path), bootstrap_on_startup=False)) as client:
         response = client.get("/api/does-not-exist")
 
     assert response.status_code == 404

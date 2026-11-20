@@ -15,19 +15,29 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from tts import __version__
 from tts.api import ROUTERS
+from tts.api.dependencies import close_services, initialize_services
 from tts.api.errors import AppError, error_envelope
 from tts.config import Settings
+from tts.jobs.manager import bootstrap
+from tts.voices.store import ensure_data_dirs
 
 logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Startup hook placeholder; later tasks attach bootstrap work here."""
+    """Initialize app services and tolerate an unavailable first-run download."""
     settings: Settings = app.state.settings
     logger.info("tts %s starting on %s:%s", __version__, settings.host, settings.port)
-    yield
-    logger.info("tts stopped")
+    ensure_data_dirs(settings)
+    dal, _ = initialize_services(app)
+    try:
+        if app.state.bootstrap_on_startup:
+            bootstrap(settings, dal)
+        yield
+    finally:
+        close_services(app)
+        logger.info("tts stopped")
 
 
 def _frontend_dist_dir() -> Path | None:
@@ -89,10 +99,15 @@ async def _handle_http_exception(request: Request, exc: Exception) -> JSONRespon
     )
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    """Build the application; tests may inject explicit settings."""
+def create_app(
+    settings: Settings | None = None,
+    *,
+    bootstrap_on_startup: bool = True,
+) -> FastAPI:
+    """Build the application; tests may inject settings and control bootstrap."""
     app = FastAPI(title="tts", version=__version__, lifespan=_lifespan)
     app.state.settings = settings if settings is not None else Settings.load()
+    app.state.bootstrap_on_startup = bootstrap_on_startup
 
     for router in ROUTERS:
         app.include_router(router, prefix="/api")

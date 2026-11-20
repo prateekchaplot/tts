@@ -6,6 +6,7 @@ import logging
 
 from fastapi import APIRouter, Request, Response
 
+from tts.api.dependencies import get_dal
 from tts.api.errors import AppError
 from tts.api.schemas import Voice, VoiceList, VoicePreviewRequest
 from tts.config import Settings
@@ -30,9 +31,10 @@ def _settings(request: Request) -> Settings:
 
 @router.get("/voices", response_model=VoiceList, summary="List installed voices")
 def list_installed_voices(request: Request) -> VoiceList:
-    """List local voices sorted by language then id, with the configured default."""
+    """List local voices sorted by language then id, with the persisted default."""
     settings = _settings(request)
     voices = store.list_voices()
+    default_settings = get_dal(request).seed_settings(settings.default_voice_id)
     return VoiceList(
         items=[
             Voice(
@@ -45,7 +47,7 @@ def list_installed_voices(request: Request) -> VoiceList:
             for voice in voices
         ],
         total=len(voices),
-        default_voice_id=settings.default_voice_id,
+        default_voice_id=str(default_settings["defaultVoiceId"]),
     )
 
 

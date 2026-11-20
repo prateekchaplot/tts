@@ -31,7 +31,7 @@ def _settings(tmp_path: Path) -> Settings:
 def _client(tmp_path: Path) -> TestClient:
     settings = _settings(tmp_path)
     store.ensure_data_dirs(settings)
-    return TestClient(create_app(settings))
+    return TestClient(create_app(settings, bootstrap_on_startup=False))
 
 
 def _install_fixtures(voices_dir: Path, *names: str) -> None:
