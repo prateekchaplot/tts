@@ -27,7 +27,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T1.6 | Jobs manager | `arch/tts/t1.6` | 140 unit tests (37 new); 13 integration tests (7 new) vs `en_US-lessac-medium` (progress ≥ 1 → succeeded, injected engine failure → no `.wav`/`.part` + status `failed`, cancel mid-run → status `cancelled` + no file, two submits strictly sequential); Ruff check/format; strict mypy; `git diff --check` | PR open — awaiting review |
+| T1.6 | Jobs manager | `arch/tts/t1.6` | 140 unit tests (37 new); 13 integration tests (7 new) vs `en_US-lessac-medium` (progress ≥ 1 → succeeded, injected engine failure → no `.wav`/`.part` + status `failed`, cancel mid-run → status `cancelled` + no file, two submits strictly sequential); Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) | [#13](https://github.com/prateekchaplot/tts/pull/13) open — awaiting review |
 
 ## Remaining
 
