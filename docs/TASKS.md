@@ -25,12 +25,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T1.6 | `arch/tts/t1.6` | [#13](https://github.com/prateekchaplot/tts/pull/13) | `3c30df73ed9f7621b976e8e1196d4fef0215bddf` | 140 unit tests (37 new); 13 integration tests (7 new) vs `en_US-lessac-medium` (progress ≥ 1 → succeeded, injected engine failure → no `.wav`/`.part` + status `failed`, cancel mid-run → status `cancelled` + no file, two submits strictly sequential); Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T2.1 | `arch/tts/t2.1` | [#14](https://github.com/prateekchaplot/tts/pull/14) | `9cbabdfac6b4261908680d1705602a05307359d7` | 156 unit tests (16 new); 15 integration tests (2 new) vs `en_US-lessac-medium` (valid RIFF/WAV preview ≤ 5 s); Ruff check/format; strict mypy; `git diff --check` |
 | T2.2 | `arch/tts/t2.2` | [#15](https://github.com/prateekchaplot/tts/pull/15) | `7ac6f186ec39b5e3f3e5eaa8ad2db7e9c7d46e35` | 184 unit tests (28 new); 16 integration tests (1 new) vs `en_US-lessac-medium` (create → SSE replay → succeeded → WAV/SRT/VTT → delete); Ruff check/format; strict mypy; ESLint; `tsc --noEmit`; 34 vitest; `git diff --check` |
+| T2.3 | `arch/tts/t2.3` | [#16](https://github.com/prateekchaplot/tts/pull/16) | `4902f8ccee74c7ed50c3a5bed20145eea0f50bbd` | 196 unit tests; 16 integration tests; Ruff check/format; strict mypy; ESLint; TypeScript; Prettier (CRLF); 34 Vitest; Vite build; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T2.3 | Settings route + first-run bootstrap | `arch/tts/t2.3` | PR [#16](https://github.com/prateekchaplot/tts/pull/16); 196 unit + 16 integration; Ruff; strict mypy; 34 Vitest; ESLint; TypeScript; Prettier (CRLF); Vite build; `git diff --check` | doing |
+| _(empty)_ | | | | |
 
 ## Remaining
 
