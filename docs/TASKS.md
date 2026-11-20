@@ -28,7 +28,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty — next up: T2.1 on branch `arch/tts/t2.1`)_ | | | | |
+| T2.1 | Uploads + voices routes | `arch/tts/t2.1` | 156 unit tests (16 new); 15 integration tests (2 new) vs `en_US-lessac-medium` (valid RIFF/WAV preview ≤ 5 s); Ruff check/format; strict mypy; `git diff --check` | PR pending — awaiting review |
 
 ## Remaining
 
@@ -114,3 +114,6 @@ _All P1 tasks done._
 - T1.6 decision: a generation that renders **no audio at all** fails with `ENGINE_ERROR` ("The speech engine produced no audio for this text.") instead of succeeding with a valid but empty WAV that no player can use (§1 "degrade honestly"). The API still rejects empty input with 422 `EMPTY_INPUT`, so this only guards text that the engine renders as silence.
 - T1.6 test layout: unit and integration test files use distinct basenames (`tests/unit/test_jobs_manager.py`, `tests/unit/test_jobs_sse.py`, `tests/integration/test_jobs_pipeline.py`) because a bare `pytest` run fails when `tests/unit` and `tests/integration` share a basename and neither directory is a package (see the T1.2 note).
 - T1.6 environment note: the integration suite renders with the real voice but keeps the database and the audio in a `tmp_path`; the manager points the voice store at its own data directory, so the fixture calls `ensure_data_dirs()` again with the real settings afterwards. `pytest` needs `--basetemp .venv/ptmp-*` on this machine (the default system temp directory is inaccessible — see the T0.2 note).
+- T2.1 decisions: both routes call `voices.store.ensure_data_dirs(settings)` lazily (idempotent) so they work before T2.3 wires startup bootstrap — T2.3 keeps its own startup call. `GET /api/voices` returns `settings.default_voice_id` (config `TTS_DEFAULT_VOICE`) as `defaultVoiceId`; T2.3 owns the persisted settings, so it should decide whether to source this field from `dal.get_settings()` instead — frozen downstream for T2.3/T3.1. The `.txt` extension check is case-insensitive; content-type accepts `text/*` and `application/octet-stream` per §9.2. Missing form field maps to the skeleton's 422 `OUT_OF_RANGE` with `{field, reason}` (T0.3 note), not a custom code. `file: Annotated[UploadFile, File(...)]` is used instead of a default value to satisfy Ruff B008.
+- T2.1 shared file: appended `uploads.router` and `voices.router` to `ROUTERS` in `src/tts/api/__init__.py` (§14.4 append-only registry). Dependent tasks: T2.2, T2.3 add their own router entries.
+- T2.1 test layout: unit tests `tests/unit/test_api_uploads.py` and `tests/unit/test_api_voices.py`, integration test `tests/integration/test_api_voices_preview.py` (unique basenames; see the T1.2 note). Preview error paths are unit-tested with monkeypatched `store.preview_wav`; the real-engine WAV check is integration-only.
