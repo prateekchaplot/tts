@@ -323,9 +323,9 @@ tts/
 ### 7.7 `history`
 - **Responsibility:** own the SQLite database: generation records, settings kv, bounded eviction.
 - **Owns:** `src/tts/history/dal.py`, `src/tts/history/schema.sql`
-- **Public interface:** `Dal(data_dir) -> Dal` with `create_generation(...) -> str (id)`, `set_status(id, status, error=None, **result_fields)`, `get(id) -> dict | None`, `list(limit, offset) -> (list[dict], total)`, `delete(id) -> bool` (deletes row + audio file), `evict_to_limit(active_ids: set[str]) -> list[str]` (deleted ids, oldest first, never touching `active_ids`), `get_settings() -> dict`, `put_settings(patch: dict) -> dict`. A single connection (`check_same_thread=False`) guarded by one `threading.RLock`; WAL mode; `PRAGMA user_version`-based migrations (§8.4).
+- **Public interface:** `Dal(data_dir) -> Dal` with `create_generation(...) -> str (id)`, `set_status(id, status, error=None, **result_fields)`, `get(id) -> dict | None`, `list(limit, offset) -> (list[dict], total)`, `delete(id) -> bool` (deletes row + audio file; raises `ActiveGenerationError` when the row is still active), `evict_to_limit(active_ids: set[str]) -> list[str]` (deleted ids, oldest first, never touching `active_ids`), `get_settings() -> dict`, `put_settings(patch: dict) -> dict` (rejects keys outside §8.2), `seed_settings(default_voice_id: str) -> dict` (writes the §8.2 defaults for every key not yet stored; never overwrites). A single connection (`check_same_thread=False`) guarded by one `threading.RLock`; WAL mode; `PRAGMA user_version`-based migrations (§8.4).
 - **Depends on:** `config`; stdlib `sqlite3`.
-- **Must not:** synthesize, enqueue, or serve HTTP; delete a row whose id is in `active_ids` (queued/running/cancelling); ever leave a row referencing a missing audio file — file deletion happens inside the same critical section as row deletion.
+- **Must not:** synthesize, enqueue, or serve HTTP; delete a row whose id is in `active_ids` (queued/running/cancelling); ever leave a row referencing a missing audio file — file deletion happens inside the same critical section as row deletion, and the row is removed before its file so that a failure between the two steps cannot orphan a row. A file the operating system refuses to remove is remembered and retried on the next delete, eviction, or close.
 - **PRD requirements covered:** FR-08, NFR-03, NFR-05.
 
 ### 7.8 `jobs`
@@ -415,7 +415,7 @@ erDiagram
 
 ### 8.5 Retention, deletion, privacy
 
-History is bounded at `TTS_HISTORY_LIMIT` rows: after each successful insert the worker calls `evict_to_limit({id})`, deleting oldest rows and their WAV files. `DELETE` and eviction happen under the DAL lock so a row and its file always disappear together (NFR-05). Deleting data is real deletion (no soft-delete, no trash). No data ever leaves the machine except the one-time voice download (A-5).
+History is bounded at `TTS_HISTORY_LIMIT` rows: after each successful insert the worker calls `evict_to_limit(active_ids)`, deleting oldest rows and their WAV files. The caller passes **every** in-flight id in `active_ids` — not just the new one — because the DAL protects exactly the ids it is given. `DELETE` and eviction happen under the DAL lock so a row and its file always disappear together (NFR-05). Deleting data is real deletion (no soft-delete, no trash). No data ever leaves the machine except the one-time voice download (A-5).
 
 ---
 
