@@ -8,6 +8,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from tts.api.routes import health
+from tts.api.routes import health, uploads, voices
 
-ROUTERS: list[APIRouter] = [health.router]
+ROUTERS: list[APIRouter] = [health.router, uploads.router, voices.router]
