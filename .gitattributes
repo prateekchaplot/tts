@@ -1,0 +1,3 @@
+# Caption golden files must stay byte-identical across checkouts so the
+# byte-for-byte renderer tests pass on Windows clones with core.autocrlf=true.
+tests/fixtures/subtitles/** text eol=lf
