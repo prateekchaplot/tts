@@ -21,12 +21,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T1.2 | `arch/tts/t1.2` | [#8](https://github.com/prateekchaplot/tts/pull/8) | `bbc90d5db39cca15a2520bfbfa4cd1a2d3dd4016` | 52 unit tests (9 new); 6 integration tests vs `en_US-lessac-medium` (3 new); Ruff check/format; strict mypy; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T1.3 | `arch/tts/t1.3` | [#9](https://github.com/prateekchaplot/tts/pull/9) | `0de115fb79b190966f63a0fc82d1ef63e4cb3f8f` | 66 unit tests (14 new); 6 integration tests; Ruff check/format; strict mypy; real-voice manual check (ratio 0.909, monotonic); PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T1.4 | `arch/tts/t1.4` | [#10](https://github.com/prateekchaplot/tts/pull/10) | `89cd805928ded5ab035618923178764e6f513cc3` | 87 unit tests (21 new); golden SRT/VTT byte-exact fixtures (LF-pinned); Ruff check/format; strict mypy; `git diff --check` |
+| T1.5 | `arch/tts/t1.5` | [#11](https://github.com/prateekchaplot/tts/pull/11) | `171c08c4b1e1a6f9ba98d870099f212c5848f2c8` | 103 unit tests (16 new); NFR-05 delete/eviction consistency + ordering + settings property tests; Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T1.5 | History DAL completion | `arch/tts/t1.5` | 103 unit tests (16 new); Ruff check/format; strict mypy; `git diff --check`; `npm run lint`/`typecheck`/`test` (34 vitest) | PR open, awaiting review |
+| _(empty — next up: T1.6 on branch `arch/tts/t1.6`)_ | | | | |
 
 ## Remaining
 
@@ -101,4 +102,4 @@ _All P0 tasks done._
 - T1.5 downstream contracts: **T2.2** must catch `ActiveGenerationError` from `dal.delete()` and map it to 409 `GENERATION_BUSY` (§9.2) instead of 404; **T2.3** should call the new `dal.seed_settings(default_voice_id)` for the §8.2 lazy seeding (the DAL cannot import `voices` — §7.7 allows only `config` + stdlib `sqlite3` — so the caller supplies the voice id); **T1.6** must pass **every** in-flight id to `evict_to_limit(active_ids)`, not just the new one, because the DAL protects exactly the ids it is given (§8.5 updated to say so).
 - T1.5 eviction ordering: the system clock is far too coarse to order rapid inserts (2000 `datetime.now()` calls on this machine produced 3 distinct values), so `created_at` is now emitted strictly increasing — the clock value is nudged forward by 1 µs when it would repeat, and a reopened DAL resumes after the newest stored row. History order (newest first) and eviction order (oldest first) therefore follow insertion order instead of an arbitrary UUID tiebreaker. `created_at` stays ISO-8601 UTC; the stored format gained microsecond precision.
 - T1.5 settings: `put_settings` now rejects keys outside `{defaultVoiceId, rate, volume}` with `ValueError` and `get_settings` ignores unknown stored keys, enforcing §8.2's key set in the DAL. Lazy seeding stays in the API layer (T2.3), as T0.4 decided.
-- T1.5 environment finding: `tests/integration/test_piper_engine.py::test_rate_scales_duration_within_ten_percent` is flaky (measured ratio 0.814–0.913 over 10 attempts against the [0.72, 0.88] band; 6/10 pass) because piper 1.8's duration predictor is stochastic. It is pre-existing (T1.2) and unrelated to T1.5, so this task does not edit a file owned by T1.2 (§16); the fix is a separate maintenance PR #12 on branch `fix/integration-rate-flake` (7 runs per rate, band [0.78, 0.93] around the measured 0.87), which must merge before T1.5's CI can be relied on to stay green.
+- T1.5 environment finding: `tests/integration/test_piper_engine.py::test_rate_scales_duration_within_ten_percent` is flaky (measured ratio 0.814–0.913 over 10 attempts against the [0.72, 0.88] band; 6/10 pass) because piper 1.8's duration predictor is stochastic. It was pre-existing (T1.2) and unrelated to T1.5, so that task did not edit a file owned by T1.2 (§16); the fix merged as PR #12 (squash `6910a09`, branch `fix/integration-rate-flake`, 7 runs per rate, band [0.78, 0.93] around the measured 0.87) before T1.5 merged.
