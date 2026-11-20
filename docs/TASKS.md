@@ -28,7 +28,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T2.1 | Uploads + voices routes | `arch/tts/t2.1` | 156 unit tests (16 new); 15 integration tests (2 new) vs `en_US-lessac-medium` (valid RIFF/WAV preview ≤ 5 s); Ruff check/format; strict mypy; `git diff --check` | PR pending — awaiting review |
+| T2.1 | Uploads + voices routes | `arch/tts/t2.1` | 156 unit tests (16 new); 15 integration tests (2 new) vs `en_US-lessac-medium` (valid RIFF/WAV preview ≤ 5 s); Ruff check/format; strict mypy; `git diff --check` | [#14](https://github.com/prateekchaplot/tts/pull/14) open — awaiting review |
 
 ## Remaining
 
