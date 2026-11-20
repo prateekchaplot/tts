@@ -29,7 +29,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty — next up: T2.2 on branch `arch/tts/t2.2`)_ | | | | |
+| T2.2 | Generations routes | `arch/tts/t2.2` | 184 unit tests (28 new); 16 integration tests (1 new) vs `en_US-lessac-medium`; Ruff check/format; strict mypy; ESLint; `tsc --noEmit`; 34 vitest; `git diff --check` | PR open, awaiting review |
 
 ## Remaining
 
@@ -46,7 +46,6 @@ _All P1 tasks done._
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
 | T2.1 | Uploads + voices routes | `src/tts/api/routes/uploads.py`, `voices.py` | T0.3, T1.1 | Upload validation, preview WAV, no-voice response |
-| T2.2 | Generations routes | `src/tts/api/routes/generations.py` | T0.3, T1.6 | Create/SSE/cancel/delete, validation/errors, audio and subtitle exports |
 | T2.3 | Settings route + first-run bootstrap | `src/tts/api/routes/settings.py`, `src/tts/jobs/manager.py` | T0.3, T1.6 | Lazy defaults, partial persistence, invalid voice rejection, offline startup |
 
 ### P3 — UI against contracts
@@ -118,3 +117,8 @@ _All P1 tasks done._
 - T2.1 decisions: both routes call `voices.store.ensure_data_dirs(settings)` lazily (idempotent) so they work before T2.3 wires startup bootstrap — T2.3 keeps its own startup call. `GET /api/voices` returns `settings.default_voice_id` (config `TTS_DEFAULT_VOICE`) as `defaultVoiceId`; T2.3 owns the persisted settings, so it should decide whether to source this field from `dal.get_settings()` instead — frozen downstream for T2.3/T3.1. The `.txt` extension check is case-insensitive; content-type accepts `text/*` and `application/octet-stream` per §9.2. Missing form field maps to the skeleton's 422 `OUT_OF_RANGE` with `{field, reason}` (T0.3 note), not a custom code. `file: Annotated[UploadFile, File(...)]` is used instead of a default value to satisfy Ruff B008.
 - T2.1 shared file: appended `uploads.router` and `voices.router` to `ROUTERS` in `src/tts/api/__init__.py` (§14.4 append-only registry). Dependent tasks: T2.2, T2.3 add their own router entries.
 - T2.1 test layout: unit tests `tests/unit/test_api_uploads.py` and `tests/unit/test_api_voices.py`, integration test `tests/integration/test_api_voices_preview.py` (unique basenames; see the T1.2 note). Preview error paths are unit-tested with monkeypatched `store.preview_wav`; the real-engine WAV check is integration-only.
+- T2.2 decisions: `app.state` had only `settings`, so the route lazily attaches `dal` (`Dal(settings.data_dir, history_limit=settings.history_limit)`) and `jobs` (`JobManager`) under a lock; injected instances win. **T2.3 owns startup wiring** and should reuse these `app.state` entries (and close them at shutdown) rather than creating duplicates. Omitted `voiceId`/`rate`/`volume` come from `dal.seed_settings(settings.default_voice_id)` + `get_settings()` (§8.2 lazy seeding is idempotent, so this does not conflict with T2.3). Empty-store is checked before unknown-voice, per the T1.6 contract, so the no-voice remedy wins. An already-`cancelling` row answers 200 `status: cancelled` while jobs still reports `cancelling` (T1.6 ambiguity). `text` is null only for `queued`/`running`/`cancelling`; failed/cancelled rows expose the full input (§9.2 wording). A succeeded row whose audio path is missing/outside `data_dir/generations` answers 409 `GENERATION_NOT_READY` (§9.1 has no specific code for that inconsistent state). `sourceType` is always `"text"` because the §9.2 request body has no `sourceType` field; uploaded text is generated only after the user reviews it in the input view.
+- T2.2 download naming: §9.2 fixes the character set `[a-z0-9-]` but not the word separator, so words are joined with `-` (e.g. `hello-world-this-is-a-test_20261120-190445.wav`). Frozen downstream for T3.2's `DownloadBar` contract.
+- T2.2 shared file: appended `generations.router` to `ROUTERS` in `src/tts/api/__init__.py` (§14.4 append-only). Dependent task: T2.3 adds its own `settings.router` entry.
+- T2.2 SSE: sends `RETRY_LINE` once, then `subscriber.events()` frames until the terminal event; `Cache-Control: no-cache` and `X-Accel-Buffering: no` mitigate R6. No explicit unsubscribe on client disconnect — the manager closes the subscriber queue at the terminal event, so no stream registration leaks. Unknown ids (malformed or well-formed) are 404 before the stream opens.
+- T2.2 test layout: `tests/unit/test_api_generations_routes.py` and `tests/integration/test_api_generations_flow.py` (unique basenames; see the T1.2 note). Unit tests use a fake job manager with a real DAL so no engine is imported; the integration test runs a real generation against `en_US-lessac-medium` and verifies SSE replay, detail, WAV, SRT/VTT, and delete.
