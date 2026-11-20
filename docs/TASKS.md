@@ -22,12 +22,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T1.3 | `arch/tts/t1.3` | [#9](https://github.com/prateekchaplot/tts/pull/9) | `0de115fb79b190966f63a0fc82d1ef63e4cb3f8f` | 66 unit tests (14 new); 6 integration tests; Ruff check/format; strict mypy; real-voice manual check (ratio 0.909, monotonic); PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T1.4 | `arch/tts/t1.4` | [#10](https://github.com/prateekchaplot/tts/pull/10) | `89cd805928ded5ab035618923178764e6f513cc3` | 87 unit tests (21 new); golden SRT/VTT byte-exact fixtures (LF-pinned); Ruff check/format; strict mypy; `git diff --check` |
 | T1.5 | `arch/tts/t1.5` | [#11](https://github.com/prateekchaplot/tts/pull/11) | `171c08c4b1e1a6f9ba98d870099f212c5848f2c8` | 103 unit tests (16 new); NFR-05 delete/eviction consistency + ordering + settings property tests; Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
+| T1.6 | `arch/tts/t1.6` | [#13](https://github.com/prateekchaplot/tts/pull/13) | `3c30df73ed9f7621b976e8e1196d4fef0215bddf` | 140 unit tests (37 new); 13 integration tests (7 new) vs `en_US-lessac-medium` (progress ≥ 1 → succeeded, injected engine failure → no `.wav`/`.part` + status `failed`, cancel mid-run → status `cancelled` + no file, two submits strictly sequential); Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T1.6 | Jobs manager | `arch/tts/t1.6` | 140 unit tests (37 new); 13 integration tests (7 new) vs `en_US-lessac-medium` (progress ≥ 1 → succeeded, injected engine failure → no `.wav`/`.part` + status `failed`, cancel mid-run → status `cancelled` + no file, two submits strictly sequential); Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) | [#13](https://github.com/prateekchaplot/tts/pull/13) open — awaiting review |
+| _(empty — next up: T2.1 on branch `arch/tts/t2.1`)_ | | | | |
 
 ## Remaining
 
@@ -37,7 +38,7 @@ _All P0 tasks done._
 
 ### P1 — Service layer
 
-_T1.6 in progress on `arch/tts/t1.6`; P1 is otherwise complete._
+_All P1 tasks done._
 
 ### P2 — HTTP surface
 
