@@ -20,12 +20,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T1.1 | `arch/tts/t1.1` | [#7](https://github.com/prateekchaplot/tts/pull/7) | `c6363891b660cc7cb013a16a01fe284676316931` | 43 unit tests (11 new); 3 integration tests vs `en_US-lessac-medium` (alignments supported, 2.73 s preview WAV); Ruff check/format; strict mypy; PR CI green (lint, unit ubuntu+windows, integration) |
 | T1.2 | `arch/tts/t1.2` | [#8](https://github.com/prateekchaplot/tts/pull/8) | `bbc90d5db39cca15a2520bfbfa4cd1a2d3dd4016` | 52 unit tests (9 new); 6 integration tests vs `en_US-lessac-medium` (3 new); Ruff check/format; strict mypy; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T1.3 | `arch/tts/t1.3` | [#9](https://github.com/prateekchaplot/tts/pull/9) | `0de115fb79b190966f63a0fc82d1ef63e4cb3f8f` | 66 unit tests (14 new); 6 integration tests; Ruff check/format; strict mypy; real-voice manual check (ratio 0.909, monotonic); PR CI green (lint, unit ubuntu+windows, integration, e2e) |
+| T1.4 | `arch/tts/t1.4` | [#10](https://github.com/prateekchaplot/tts/pull/10) | `89cd805928ded5ab035618923178764e6f513cc3` | 87 unit tests (21 new); golden SRT/VTT byte-exact fixtures (LF-pinned); Ruff check/format; strict mypy; `git diff --check` |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T1.4 | Subtitles — cue builder + SRT/VTT renderers | `arch/tts/t1.4` | 87 unit tests (21 new); Ruff check/format; strict mypy; golden fixtures byte-exact; `git diff --check` | PR pending review |
+| _(empty — next up: T1.5 on branch `arch/tts/t1.5`, pending review)_ | | | | |
 
 ## Remaining
 
