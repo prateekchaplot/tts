@@ -30,7 +30,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T2.3 | Settings route + first-run bootstrap | `arch/tts/t2.3` | 196 unit + 16 integration; Ruff; strict mypy; 34 Vitest; ESLint; TypeScript; Prettier (CRLF); Vite build; `git diff --check` | doing |
+| T2.3 | Settings route + first-run bootstrap | `arch/tts/t2.3` | PR [#16](https://github.com/prateekchaplot/tts/pull/16); 196 unit + 16 integration; Ruff; strict mypy; 34 Vitest; ESLint; TypeScript; Prettier (CRLF); Vite build; `git diff --check` | doing |
 
 ## Remaining
 
