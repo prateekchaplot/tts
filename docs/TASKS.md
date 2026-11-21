@@ -32,7 +32,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty)_ | | | | |
+| T3.2 | Playback + downloads | `arch/tts/t3.2` | 83 Vitest (32 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 13/13 (highlight advance/pause, word click, cue click, ArrowRight ±5 s, Space toggle, ended reset, WAV/SRT/VTT names + content); 196 pytest; Ruff check/format; strict mypy; `git diff --check` | Open — pending review |
 
 ## Remaining
 
@@ -52,7 +52,6 @@ _All P2 tasks done._
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T3.2 | Playback + downloads | `frontend/src/` playback components and hook | T0.5 | Highlight/seek/reset behavior and correctly named downloads |
 | T3.3 | History | `frontend/src/` history component | T0.5 | History preview, restore, and individual deletion |
 
 ### P4 — Integration
@@ -127,3 +126,8 @@ _All P2 tasks done._
 - T3.1 downstream contract (T3.2): `GenerateBar` owns the only SSE subscription and sets `current.audioUrl` after fetching the detail + audio blob. If the blob fetch fails after a `succeeded` event (or the detail fetch fails), the current entry is unlocked with `audioUrl`/`detail` absent and an error banner is shown, so `PlaybackPanel` must render a ready-state message instead of assuming audio exists. T3.3's history restore should load detail + audio via `SELECT_HISTORY_ITEM` without opening a stream.
 - T3.1 testing: no jsdom/Testing Library was added (§5 lists vitest only). 17 new Vitest tests cover validation/clamping and static markup (no-voice explanation, control ranges, section order); AC3, AC4, AC6, text upload, preview playback, generate→succeeded, and cancel were verified in mock mode with a temporary headless-Chromium Playwright script (removed after the run, not committed).
 - T3.1 shared-file note: `styles.css` (created by T0.5, not assigned to a later task) received additive form/progress styles; `components/validation.ts` is a new T3.1-owned helper module not listed in §6's frontend tree. The P2 "remaining" table was already marked done in an uncommitted edit at task start; it was kept because it matches T2.3's merged state.
+- T3.2 decisions: `usePlayback` uses a callback ref for `<audio>` (the element lives in a ref, not state) so the rAF loop and media-event handlers never mutate a state value and React's effect lint stays clean. Exported pure helpers (`findActiveWordIndex`, `firstWordIndexAtOrAfter`, `clampSeconds`) carry the §10.3 binary search: a word is active only while `startMs <= t <= endMs`, so gaps and post-end times highlight nothing; `ended` clears the highlight; media events (`loadedmetadata`, `emptied`) reset it when `audioUrl` changes. Keyboard Space / ArrowLeft / ArrowRight ignore inputs, textareas, selects, buttons, links, and contenteditable targets, so native activation still works.
+- T3.2 download naming: `fetch` cannot read the server's `Content-Disposition` header, so `DownloadBar.downloadFilename` rebuilds the T2.2 rule client-side: first ≤ 6 `[A-Za-z0-9]+` words joined by `-` (ASCII-only, so `Über café` → `ber-caf` exactly like the Python regex), lowercased, `speech` fallback, plus the UTC `YYYYMMDD-HHMMSS` of `createdAt`. Frozen downstream for T5.1's AC9/AC10 specs.
+- T3.2 accessibility decision: word spans are mouse-only seek targets; sentence cue `<button>`s, the ±5 s buttons, and the keyboard shortcuts are the keyboard paths, avoiding thousands of tab stops on a 10k-word input. T4.2 owns the a11y pass and should revisit if it wants word-level keyboard seek. `PlaybackPanel` also renders the T3.1 succeeded-without-audio ready state instead of assuming a blob exists.
+- T3.2 downstream contract (T3.3): `SubtitleView` and `DownloadBar` are prop-driven; history restore only needs `SELECT_HISTORY_ITEM` with a detail + audio URL, and `PlaybackPanel` picks it up with no further wiring.
+- T3.2 shared-file note: `App.tsx` and `styles.css` are not assigned to T3.2 but received additive edits — T3.1's placeholder comment hands playback to T3.2/T3.3, so `App.tsx` now renders `PlaybackPanel` and keeps the history placeholder for T3.3; `styles.css` gained playback/subtitle/download rules. `contracts.ts`, `appContext.tsx`, and `api/*` were untouched (all needed types/actions already existed).
