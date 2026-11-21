@@ -11,7 +11,7 @@ function renderApp(): string {
   );
 }
 
-describe("App placeholder", () => {
+describe("App shell", () => {
   it("renders the section stack in the documented order", () => {
     const html = renderApp();
     const headings = [
@@ -24,6 +24,16 @@ describe("App placeholder", () => {
     const positions = headings.map((heading) => html.indexOf(heading));
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+  });
+
+  it("renders the input, voice, and generate controls", () => {
+    const html = renderApp();
+    expect(html).toContain('id="input-text"');
+    expect(html).toContain('accept=".txt,text/plain"');
+    expect(html).toContain('id="voice-select"');
+    expect(html).toContain('id="rate-slider"');
+    expect(html).toContain('id="volume-slider"');
+    expect(html).toMatch(/<button[^>]*disabled[^>]*>Generate audio<\/button>/);
   });
 
   it("shows the no-voice state and empty history", () => {
