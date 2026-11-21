@@ -31,7 +31,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty)_ | | | | |
+| T3.1 | App shell + input + voice + generate | `arch/tts/t3.1` | 51 Vitest (17 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium check (AC3/AC4/AC6, upload, preview playback, generate→succeeded, cancel); 196 pytest; Ruff check/format; strict mypy; `git diff --check` | Awaiting PR review |
 
 ## Remaining
 
@@ -45,15 +45,12 @@ _All P1 tasks done._
 
 ### P2 — HTTP surface
 
-| ID | Task | Files | Deps | Acceptance criteria (summary) |
-|---|---|---|---|---|
-| T2.1 | Uploads + voices routes | `src/tts/api/routes/uploads.py`, `voices.py` | T0.3, T1.1 | Upload validation, preview WAV, no-voice response |
+_All P2 tasks done._
 
 ### P3 — UI against contracts
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
-| T3.1 | App shell + input + voice + generate | `frontend/src/App.tsx`, components, state wiring | T0.5 | Input/upload, validation, settings ranges, voice preview, no-voice guidance |
 | T3.2 | Playback + downloads | `frontend/src/` playback components and hook | T0.5 | Highlight/seek/reset behavior and correctly named downloads |
 | T3.3 | History | `frontend/src/` history component | T0.5 | History preview, restore, and individual deletion |
 
@@ -124,3 +121,8 @@ _All P1 tasks done._
 - T2.2 SSE: sends `RETRY_LINE` once, then `subscriber.events()` frames until the terminal event; `Cache-Control: no-cache` and `X-Accel-Buffering: no` mitigate R6. No explicit unsubscribe on client disconnect — the manager closes the subscriber queue at the terminal event, so no stream registration leaks. Unknown ids (malformed or well-formed) are 404 before the stream opens.
 - T2.2 test layout: `tests/unit/test_api_generations_routes.py` and `tests/integration/test_api_generations_flow.py` (unique basenames; see the T1.2 note). Unit tests use a fake job manager with a real DAL so no engine is imported; the integration test runs a real generation against `en_US-lessac-medium` and verifies SSE replay, detail, WAV, SRT/VTT, and delete.
 - T2.3 scope resolution: expanded §14.2 to include app lifespan/service wiring, CLI serving and voice installation, and persisted default-voice responses in health and voice-list routes; the tracker note had assigned startup wiring to T2.3 while the original owned-file list omitted it. `jobs.manager.bootstrap` already existed from T1.6 and is reused. Unit tests disable automatic bootstrap except for the explicit offline-startup case. On this Windows checkout, `npm run format:check` assumes LF while tracked frontend files are checked out as CRLF (`core.autocrlf=true`); `npm run format:check -- --end-of-line crlf` passes without changing files.
+- T3.1 decisions: `App.tsx` bootstraps `listVoices` + `getSettings` on mount and applies the persisted default voice, rate, and volume through the existing §12 actions (no new reducer actions; `appContext.tsx` untouched). Local pre-flight validation lives in the new T3.1-owned `components/validation.ts`: empty/whitespace → `EMPTY_INPUT` without a request, >50,000 chars → `INPUT_TOO_LONG`, no selected voice → `NO_VOICES_INSTALLED`. `MAX_INPUT_CHARS` mirrors §11's default because §9 does not expose the server's configured limit; the server remains authoritative. Sliders clamp into §9.2 ranges (`clampRate`, `clampVolume`) and show numeric values.
+- T3.1 settings persistence: §12 assigns `putSettings` on blur to `VoicePanel`, so T3.1 implements it and loads persisted settings on mount; §14.2's T4.1 wording "settings persistence" is reduced to live-mode verification. Live persistence is unverified here because the mock API resets on reload.
+- T3.1 downstream contract (T3.2): `GenerateBar` owns the only SSE subscription and sets `current.audioUrl` after fetching the detail + audio blob. If the blob fetch fails after a `succeeded` event (or the detail fetch fails), the current entry is unlocked with `audioUrl`/`detail` absent and an error banner is shown, so `PlaybackPanel` must render a ready-state message instead of assuming audio exists. T3.3's history restore should load detail + audio via `SELECT_HISTORY_ITEM` without opening a stream.
+- T3.1 testing: no jsdom/Testing Library was added (§5 lists vitest only). 17 new Vitest tests cover validation/clamping and static markup (no-voice explanation, control ranges, section order); AC3, AC4, AC6, text upload, preview playback, generate→succeeded, and cancel were verified in mock mode with a temporary headless-Chromium Playwright script (removed after the run, not committed).
+- T3.1 shared-file note: `styles.css` (created by T0.5, not assigned to a later task) received additive form/progress styles; `components/validation.ts` is a new T3.1-owned helper module not listed in §6's frontend tree. The P2 "remaining" table was already marked done in an uncommitted edit at task start; it was kept because it matches T2.3's merged state.
