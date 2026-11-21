@@ -1,8 +1,8 @@
 /**
  * Single page layout (ARCHITECTURE.md section 12).
  *
- * Sections stack in their documented order. The history section stays as a
- * placeholder until T3.3 replaces it, so that task can own its component file.
+ * Sections stack in their documented order: ErrorBanner, InputPanel,
+ * VoicePanel, GenerateBar, PlaybackPanel, HistoryPanel.
  */
 
 import { useEffect } from "react";
@@ -10,6 +10,7 @@ import { api, apiMode } from "./api";
 import { toApiError } from "./api/client";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { GenerateBar } from "./components/GenerateBar";
+import { HistoryPanel } from "./components/HistoryPanel";
 import { InputPanel } from "./components/InputPanel";
 import { PlaybackPanel } from "./components/PlaybackPanel";
 import { VoicePanel } from "./components/VoicePanel";
@@ -17,7 +18,7 @@ import { clampRate, clampVolume } from "./components/validation";
 import { useApp } from "./state/appContext";
 
 export function App() {
-  const { state, dispatch } = useApp();
+  const { dispatch } = useApp();
 
   useEffect(() => {
     let cancelled = false;
@@ -75,13 +76,7 @@ export function App() {
 
       <PlaybackPanel />
 
-      <section className="section" aria-labelledby="history-heading">
-        <h2 id="history-heading">History</h2>
-        <p className="hint">Recent generations can be restored or deleted.</p>
-        <p className="stat">
-          {state.history.total} saved generation{state.history.total === 1 ? "" : "s"}
-        </p>
-      </section>
+      <HistoryPanel />
 
       <footer className="app-footer">
         <p>Everything runs on this machine; nothing is uploaded.</p>

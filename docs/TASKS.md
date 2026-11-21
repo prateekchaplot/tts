@@ -33,7 +33,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty)_ | | | | |
+| T3.3 | History | `arch/tts/t3.3` | 93 Vitest (10 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 15/15 (narrow starts collapsed, summary toggle, empty state, 2 entries with preview/voice/time, restore loads subtitles + audio, delete one keeps the other, delete open entry clears playback, no console errors); 196 pytest; Ruff check/format; strict mypy; `git diff --check` | PR pending review |
 
 ## Remaining
 
@@ -51,9 +51,7 @@ _All P2 tasks done._
 
 ### P3 — UI against contracts
 
-| ID | Task | Files | Deps | Acceptance criteria (summary) |
-|---|---|---|---|---|
-| T3.3 | History | `frontend/src/` history component | T0.5 | History preview, restore, and individual deletion |
+_T3.3 in progress (see Doing)._
 
 ### P4 — Integration
 
@@ -132,3 +130,8 @@ _All P2 tasks done._
 - T3.2 accessibility decision: word spans are mouse-only seek targets; sentence cue `<button>`s, the ±5 s buttons, and the keyboard shortcuts are the keyboard paths, avoiding thousands of tab stops on a 10k-word input. T4.2 owns the a11y pass and should revisit if it wants word-level keyboard seek. `PlaybackPanel` also renders the T3.1 succeeded-without-audio ready state instead of assuming a blob exists.
 - T3.2 downstream contract (T3.3): `SubtitleView` and `DownloadBar` are prop-driven; history restore only needs `SELECT_HISTORY_ITEM` with a detail + audio URL, and `PlaybackPanel` picks it up with no further wiring.
 - T3.2 shared-file note: `App.tsx` and `styles.css` are not assigned to T3.2 but received additive edits — T3.1's placeholder comment hands playback to T3.2/T3.3, so `App.tsx` now renders `PlaybackPanel` and keeps the history placeholder for T3.3; `styles.css` gained playback/subtitle/download rules. `contracts.ts`, `appContext.tsx`, and `api/*` were untouched (all needed types/actions already existed).
+- T3.3 decisions: `HistoryPanel` is a native `<details>` disclosure. §12's "collapsed by default on narrow viewports" is read once at mount from `matchMedia("(max-width: 700px)")`; afterwards the user's toggle wins (resizing does not collapse it). Restore is offered only for `succeeded` rows and loads detail + audio blob via `getGeneration`/`getAudioBlob` then `SELECT_HISTORY_ITEM` — no SSE, per the T3.1/T3.2 contract — and deliberately does not overwrite the input text or voice/rate/volume. The restored object URL is revoked when playback moves to another entry/generation or the panel unmounts. Failed and cancelled rows stay visible and deletable but cannot be restored; delete is disabled for `queued`/`running`/`cancelling` rows because the API answers 409 `GENERATION_BUSY`. There is no delete confirmation dialog (T4.2 can add one).
+- T3.3 history refresh: the list loads on mount and once per terminal current generation that is not already listed, so a just-finished generation appears without polling. The mock keeps history in memory only (a reload clears it); live persistence and the 20-entry eviction stay T4.1's scope.
+- T3.3 testability: without jsdom, row rules live in exported pure helpers (`canRestore`, `canDelete`, `historyStatusText`, `historyPreview`, `formatHistoryTime`, `historyStartsOpen`) and the presentational `HistoryList` is rendered with `renderToStaticMarkup`. Interactive behavior was verified in mock mode with a temporary headless-Chromium Playwright script (removed after the run, not committed).
+- T3.3 shared-file note: `App.tsx` and `styles.css` are not assigned to T3.3 but received additive edits — T3.1/T3.2 left the history placeholder for this task, so `App.tsx` now renders `HistoryPanel`, and `styles.css` gained history/disclosure rules. `contracts.ts`, `appContext.tsx`, `api/*`, and the mock were untouched (all needed actions and methods already existed).
+- T3.3 frozen downstream (T5.1 AC13 spec): rows use classes `.history-item`, `.history-preview`, `.history-meta`, `.history-actions`; controls carry `aria-label="Open generation: <preview>"` and `aria-label="Delete generation: <preview>"`; the count line is `N saved generation(s)` and the empty state reads "Nothing here yet. Generate audio and it will appear in this list."

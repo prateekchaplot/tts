@@ -318,6 +318,58 @@ audio {
   margin-top: 0.5rem;
 }
 
+.history summary {
+  cursor: pointer;
+}
+
+.history summary h2 {
+  display: inline;
+  margin: 0;
+}
+
+.history-list {
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.history-body {
+  min-width: 0;
+  flex: 1 1 14rem;
+}
+
+.history-preview {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.history-meta {
+  margin-top: 0.15rem;
+  font-size: 0.9rem;
+}
+
+.history-status {
+  margin-top: 0.15rem;
+}
+
+.history-actions {
+  margin-top: 0;
+  align-self: center;
+}
+
 code {
   padding: 0 0.25rem;
   border-radius: 0.25rem;
