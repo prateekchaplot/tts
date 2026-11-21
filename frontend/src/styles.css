@@ -215,6 +215,109 @@ progress {
   margin-top: 0.5rem;
 }
 
+audio {
+  display: block;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.playback-controls {
+  align-items: center;
+}
+
+.playback-meta {
+  margin: 0;
+  color: var(--muted);
+}
+
+.subtitle-view {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.subtitle-view h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.word-flow {
+  margin: 0;
+  line-height: 2;
+}
+
+.word {
+  padding: 0.1rem 0.15rem;
+  border-radius: 0.2rem;
+  cursor: pointer;
+}
+
+.word:hover {
+  background: var(--bg);
+}
+
+.word.active,
+.word.active:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.word.unaligned {
+  border-bottom: 1px dashed var(--muted);
+}
+
+.cue-block {
+  margin-top: 1rem;
+}
+
+.cue-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.cue {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.cue:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.cue-time {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cue-text {
+  min-width: 0;
+}
+
+.download-block {
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.download-block h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.download-row {
+  margin-top: 0.5rem;
+}
+
 code {
   padding: 0 0.25rem;
   border-radius: 0.25rem;

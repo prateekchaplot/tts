@@ -1,9 +1,8 @@
 /**
  * Single page layout (ARCHITECTURE.md section 12).
  *
- * Sections stack in their documented order. The playback and history sections
- * stay as placeholders until T3.2/T3.3 replace them, so each task can own its
- * own component file.
+ * Sections stack in their documented order. The history section stays as a
+ * placeholder until T3.3 replaces it, so that task can own its component file.
  */
 
 import { useEffect } from "react";
@@ -12,6 +11,7 @@ import { toApiError } from "./api/client";
 import { ErrorBanner } from "./components/ErrorBanner";
 import { GenerateBar } from "./components/GenerateBar";
 import { InputPanel } from "./components/InputPanel";
+import { PlaybackPanel } from "./components/PlaybackPanel";
 import { VoicePanel } from "./components/VoicePanel";
 import { clampRate, clampVolume } from "./components/validation";
 import { useApp } from "./state/appContext";
@@ -73,10 +73,7 @@ export function App() {
       <VoicePanel />
       <GenerateBar />
 
-      <section className="section" aria-labelledby="playback-heading">
-        <h2 id="playback-heading">Playback and subtitles</h2>
-        <p className="hint">Audio, word highlighting, seek, and downloads appear here.</p>
-      </section>
+      <PlaybackPanel />
 
       <section className="section" aria-labelledby="history-heading">
         <h2 id="history-heading">History</h2>
