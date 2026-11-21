@@ -27,12 +27,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T2.2 | `arch/tts/t2.2` | [#15](https://github.com/prateekchaplot/tts/pull/15) | `7ac6f186ec39b5e3f3e5eaa8ad2db7e9c7d46e35` | 184 unit tests (28 new); 16 integration tests (1 new) vs `en_US-lessac-medium` (create → SSE replay → succeeded → WAV/SRT/VTT → delete); Ruff check/format; strict mypy; ESLint; `tsc --noEmit`; 34 vitest; `git diff --check` |
 | T2.3 | `arch/tts/t2.3` | [#16](https://github.com/prateekchaplot/tts/pull/16) | `4902f8ccee74c7ed50c3a5bed20145eea0f50bbd` | 196 unit tests; 16 integration tests; Ruff check/format; strict mypy; ESLint; TypeScript; Prettier (CRLF); 34 Vitest; Vite build; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T3.1 | `arch/tts/t3.1` | [#17](https://github.com/prateekchaplot/tts/pull/17) | `9c81ee4f4c3b97004502d1103343cbd6dc03bebf` | 51 Vitest (17 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium check (AC3/AC4/AC6, upload, preview playback, generate→succeeded, cancel); 196 pytest; Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
+| T3.2 | `arch/tts/t3.2` | [#18](https://github.com/prateekchaplot/tts/pull/18) | `a291da14620f9bb32cce5b5cd51d0da8ccd9689d` | 83 Vitest (32 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 13/13 (highlight advance/pause, word click, cue click, ArrowRight ±5 s, Space toggle, ended reset, WAV/SRT/VTT names + content); 196 pytest; Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T3.2 | Playback + downloads | `arch/tts/t3.2` | 83 Vitest (32 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 13/13 (highlight advance/pause, word click, cue click, ArrowRight ±5 s, Space toggle, ended reset, WAV/SRT/VTT names + content); 196 pytest; Ruff check/format; strict mypy; `git diff --check` | Open — pending review |
+| _(empty)_ | | | | |
 
 ## Remaining
 
