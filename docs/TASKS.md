@@ -29,12 +29,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T3.1 | `arch/tts/t3.1` | [#17](https://github.com/prateekchaplot/tts/pull/17) | `9c81ee4f4c3b97004502d1103343cbd6dc03bebf` | 51 Vitest (17 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium check (AC3/AC4/AC6, upload, preview playback, generate→succeeded, cancel); 196 pytest; Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T3.2 | `arch/tts/t3.2` | [#18](https://github.com/prateekchaplot/tts/pull/18) | `a291da14620f9bb32cce5b5cd51d0da8ccd9689d` | 83 Vitest (32 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 13/13 (highlight advance/pause, word click, cue click, ArrowRight ±5 s, Space toggle, ended reset, WAV/SRT/VTT names + content); 196 pytest; Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T3.3 | `arch/tts/t3.3` | [#19](https://github.com/prateekchaplot/tts/pull/19) | `dce6ca5aa311965fd78d7e49a38dcad338ccdd66` | 93 Vitest (10 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 15/15 (narrow starts collapsed, summary toggle, empty state, 2 entries with preview/voice/time, restore loads subtitles + audio, delete one keeps the other, delete open entry clears playback, no console errors); 196 pytest; Ruff check/format; strict mypy; `git diff --check` |
+| T4.1 | `arch/tts/t4.1` | [#20](https://github.com/prateekchaplot/tts/pull/20) | `898deff1b4717ddf604401a582df043f39485ddc` | 36/36 live browser checks on the built bundle **and** behind the Vite dev proxy (voice list + preview, SSE progress → succeeded, playback/highlight/seek, three §9.2-named downloads, history restore/delete, `putSettings` on blur persisted across reload); 25 live generations at limit 20 → 20 rows + 20 WAVs, five oldest ids 404, no `.part`; 93 Vitest; ESLint; `tsc --noEmit`; Prettier (CRLF); live build; 196 pytest unit + 16 integration; `git diff --check` |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T4.1 | Live wiring + eviction + settings persistence | `arch/tts/t4.1` | 36/36 live browser checks on the built bundle **and** behind the Vite dev proxy (voice list + preview, SSE progress → succeeded, playback/highlight/seek, three §9.2-named downloads, history restore/delete, `putSettings` on blur persisted across reload); 25 live generations at limit 20 → 20 rows + 20 WAVs, five oldest ids 404, no `.part`; 93 Vitest; ESLint; `tsc --noEmit`; Prettier (CRLF); live build; 196 pytest unit + 16 integration | pending PR review |
+| _(empty)_ | | | | |
 
 ## Remaining
 
@@ -56,7 +57,7 @@ _All P3 tasks done._
 
 ### P4 — Integration
 
-_T4.1 in progress — see Doing._
+_T4.1 done — see Done._
 
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
