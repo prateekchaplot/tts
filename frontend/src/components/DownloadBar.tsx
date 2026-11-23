@@ -10,6 +10,7 @@
 import { useState } from "react";
 import { api } from "../api";
 import { toApiError } from "../api/client";
+import { strings } from "../strings";
 import { useApp } from "../state/appContext";
 import type { GenerationDetail, SubtitleFormat } from "../types/contracts";
 
@@ -112,10 +113,8 @@ export function DownloadBar({ detail }: DownloadBarProps) {
 
   return (
     <div className="download-block">
-      <h3>Downloads</h3>
-      <p className="hint">
-        Files are named after the first words of the input and when the generation was created.
-      </p>
+      <h3>{strings.downloads.heading}</h3>
+      <p className="hint">{strings.downloads.hint}</p>
       <div className="button-row download-row">
         <button
           type="button"
@@ -124,7 +123,7 @@ export function DownloadBar({ detail }: DownloadBarProps) {
             void downloadAudio();
           }}
         >
-          {busy === "wav" ? "Preparing WAV…" : "Download audio (WAV)"}
+          {busy === "wav" ? strings.downloads.preparingWav : strings.downloads.wav}
         </button>
         <button
           type="button"
@@ -134,7 +133,7 @@ export function DownloadBar({ detail }: DownloadBarProps) {
             void downloadSubtitles("srt");
           }}
         >
-          {busy === "srt" ? "Preparing SRT…" : "Download subtitles (SRT)"}
+          {busy === "srt" ? strings.downloads.preparingSrt : strings.downloads.srt}
         </button>
         <button
           type="button"
@@ -144,7 +143,7 @@ export function DownloadBar({ detail }: DownloadBarProps) {
             void downloadSubtitles("vtt");
           }}
         >
-          {busy === "vtt" ? "Preparing VTT…" : "Download subtitles (VTT)"}
+          {busy === "vtt" ? strings.downloads.preparingVtt : strings.downloads.vtt}
         </button>
       </div>
     </div>

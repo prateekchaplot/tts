@@ -11,6 +11,7 @@ import {
   historyStatusText,
   HistoryList,
   HistoryPanel,
+  type HistoryBusy,
 } from "./HistoryPanel";
 
 const SUCCEEDED: GenerationSummary = {
@@ -51,14 +52,22 @@ const FILE_SOURCE: GenerationSummary = {
   inputFilename: "notes.txt",
 };
 
-function renderList(items: GenerationSummary[], total = items.length): string {
+function renderList(
+  items: GenerationSummary[],
+  total = items.length,
+  options: { confirmingId?: string | null; busy?: HistoryBusy } = {},
+): string {
   return renderToStaticMarkup(
     <HistoryList
       items={items}
       total={total}
-      busy={null}
+      busy={options.busy ?? null}
+      confirmingId={options.confirmingId ?? null}
+      focusDeleteId={null}
       onRestore={() => undefined}
-      onDelete={() => undefined}
+      onRequestDelete={() => undefined}
+      onConfirmDelete={() => undefined}
+      onKeep={() => undefined}
     />,
   );
 }
@@ -145,6 +154,28 @@ describe("HistoryList", () => {
     expect(html).toMatch(
       /<button[^>]*disabled[^>]*aria-label="Delete generation: Still generating\.[^>]*>Delete<\/button>/,
     );
+  });
+
+  it("asks for confirmation before deleting a row", () => {
+    const html = renderList([SUCCEEDED], 1, { confirmingId: SUCCEEDED.generationId });
+    expect(html).toContain("Delete this entry? This cannot be undone.");
+    expect(html).toContain('aria-label="Confirm delete generation: Hello world."');
+    expect(html).toContain(">Confirm delete</button>");
+    expect(html).toContain('aria-label="Keep generation: Hello world."');
+    expect(html).toContain(">Keep</button>");
+    expect(html).not.toContain('aria-label="Delete generation: Hello world."');
+    expect(html).toMatch(
+      /<button[^>]*disabled[^>]*aria-label="Open generation: Hello world\.[^>]*>Open<\/button>/,
+    );
+  });
+
+  it("keeps other rows out of the confirmation state", () => {
+    const second = { ...FAILED, inputPreview: "Second entry." };
+    const html = renderList([SUCCEEDED, second], 2, { confirmingId: second.generationId });
+    expect(html.match(/Confirm delete<\/button>/g)).toHaveLength(1);
+    expect(html.match(/Delete this entry\? This cannot be undone\./g)).toHaveLength(1);
+    expect(html).toContain('aria-label="Delete generation: Hello world."');
+    expect(html).toContain('aria-label="Confirm delete generation: Second entry."');
   });
 });
 

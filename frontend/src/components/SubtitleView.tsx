@@ -7,6 +7,7 @@
 
 import { useEffect, useRef } from "react";
 import { firstWordIndexAtOrAfter } from "../hooks/usePlayback";
+import { strings } from "../strings";
 import type { Cue, WordTiming } from "../types/contracts";
 
 export interface SubtitleViewProps {
@@ -30,7 +31,10 @@ export function SubtitleView({ wordTimings, cues, activeIndex, onSeekWord }: Sub
   const activeRef = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
-    activeRef.current?.scrollIntoView({ block: "nearest" });
+    // Instant scroll: the highlight transition is already disabled under
+    // `prefers-reduced-motion` (styles.css), and smooth scrolling would fight
+    // the ~60 ms highlight cadence.
+    activeRef.current?.scrollIntoView({ block: "nearest", behavior: "auto" });
   }, [activeIndex]);
 
   const hasWords = wordTimings !== null && wordTimings.length > 0;
@@ -39,7 +43,7 @@ export function SubtitleView({ wordTimings, cues, activeIndex, onSeekWord }: Sub
   return (
     <div className="subtitle-view">
       {hasWords ? (
-        <p className="word-flow" aria-label="Words with timings">
+        <p className="word-flow" aria-label={strings.subtitles.wordsLabel}>
           {wordTimings.map((word, index) => {
             const classes = ["word"];
             if (index === activeIndex) {
@@ -53,7 +57,7 @@ export function SubtitleView({ wordTimings, cues, activeIndex, onSeekWord }: Sub
                 <span
                   ref={index === activeIndex ? activeRef : undefined}
                   className={classes.join(" ")}
-                  title={word.aligned ? undefined : "Timing estimated from nearby words"}
+                  title={word.aligned ? undefined : strings.subtitles.unalignedTitle}
                   onClick={() => {
                     onSeekWord(index);
                   }}
@@ -65,15 +69,12 @@ export function SubtitleView({ wordTimings, cues, activeIndex, onSeekWord }: Sub
           })}
         </p>
       ) : (
-        <p className="stat warning">
-          Timing details are unavailable for this generation, so there is no word highlight. Audio
-          and downloads still work.
-        </p>
+        <p className="stat warning">{strings.subtitles.noTimings}</p>
       )}
 
       {playableCues.length > 0 ? (
         <div className="cue-block">
-          <h3>Sentences</h3>
+          <h3>{strings.subtitles.sentencesHeading}</h3>
           <ol className="cue-list">
             {playableCues.map((cue) => {
               const firstWord =
@@ -84,7 +85,7 @@ export function SubtitleView({ wordTimings, cues, activeIndex, onSeekWord }: Sub
                     type="button"
                     className="cue"
                     disabled={firstWord < 0}
-                    aria-label={`Jump to ${formatClock(cue.startMs)}: ${cue.text}`}
+                    aria-label={strings.subtitles.jumpLabel(formatClock(cue.startMs), cue.text)}
                     onClick={() => {
                       onSeekWord(firstWord);
                     }}

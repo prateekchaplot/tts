@@ -213,6 +213,7 @@ tts/
 │   └── src/
 │       ├── main.tsx           # mount
 │       ├── App.tsx            # single page layout
+│       ├── strings.ts         # every user-visible string (section 11, NFR-04)
 │       ├── api/
 │       │   ├── client.ts      # typed fetch wrapper, error envelope decoding
 │       │   ├── mock.ts        # MockApi implementing ApiInterface (VITE_API_MODE=mock)

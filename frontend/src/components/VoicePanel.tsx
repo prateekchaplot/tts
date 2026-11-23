@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { toApiError } from "../api/client";
+import { strings } from "../strings";
 import { useApp } from "../state/appContext";
 import { RATE_RANGE, VOLUME_RANGE } from "../types/contracts";
 import type { Voice } from "../types/contracts";
@@ -101,22 +102,19 @@ export function VoicePanel() {
 
   return (
     <section className="section" aria-labelledby="voice-heading">
-      <h2 id="voice-heading">Voice and settings</h2>
+      <h2 id="voice-heading">{strings.voice.heading}</h2>
 
       {hasVoices ? (
-        <p className="hint">
-          Choose an installed voice, preview it, and adjust how it speaks. Settings are saved when a
-          control loses focus.
-        </p>
+        <p className="hint">{strings.voice.hint}</p>
       ) : (
         <p className="stat warning">
-          No voices installed. Run <code>tts add-voice &lt;name&gt;</code> in a terminal, then
-          reload this page.
+          {strings.voice.noVoicesPrefix} <code>tts add-voice &lt;name&gt;</code>{" "}
+          {strings.voice.noVoicesSuffix}
         </p>
       )}
 
       <div className="field">
-        <label htmlFor="voice-select">Voice</label>
+        <label htmlFor="voice-select">{strings.voice.selectLabel}</label>
         <div className="field-row">
           <select
             id="voice-select"
@@ -134,7 +132,7 @@ export function VoicePanel() {
                 </option>
               ))
             ) : (
-              <option value="">No voices installed</option>
+              <option value="">{strings.voice.noVoicesOption}</option>
             )}
           </select>
           <button
@@ -144,14 +142,14 @@ export function VoicePanel() {
               void handlePreview();
             }}
           >
-            {previewing ? "Playing preview…" : "Preview voice"}
+            {previewing ? strings.voice.previewing : strings.voice.preview}
           </button>
         </div>
       </div>
 
       <div className="field">
         <div className="slider-row">
-          <label htmlFor="rate-slider">Speaking rate</label>
+          <label htmlFor="rate-slider">{strings.voice.rateLabel}</label>
           <input
             id="rate-slider"
             type="range"
@@ -171,7 +169,7 @@ export function VoicePanel() {
         </div>
 
         <div className="slider-row">
-          <label htmlFor="volume-slider">Volume</label>
+          <label htmlFor="volume-slider">{strings.voice.volumeLabel}</label>
           <input
             id="volume-slider"
             type="range"

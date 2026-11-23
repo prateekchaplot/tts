@@ -43,6 +43,19 @@ describe("App shell", () => {
     expect(html).toContain("Nothing generated yet");
   });
 
+  it("offers a skip link to the main landmark as the first control", () => {
+    const html = renderApp();
+    expect(html.indexOf('class="skip-link"')).toBeGreaterThan(0);
+    expect(html.indexOf('class="skip-link"')).toBeLessThan(html.indexOf("<header"));
+    expect(html).toMatch(/<a class="skip-link" href="#main">Skip to main content<\/a>/);
+    expect(html).toContain('<main id="main" tabindex="-1">');
+  });
+
+  it("keeps the footer outside the main landmark", () => {
+    const html = renderApp();
+    expect(html.indexOf("</main>")).toBeLessThan(html.indexOf("<footer"));
+  });
+
   it("has no alert banner until an error is dispatched", () => {
     expect(renderApp()).not.toContain('role="alert"');
   });

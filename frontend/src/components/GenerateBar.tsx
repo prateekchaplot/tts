@@ -9,31 +9,32 @@
 import { useEffect, useRef } from "react";
 import { api } from "../api";
 import { toApiError } from "../api/client";
+import { strings } from "../strings";
 import { useApp, type CurrentGeneration } from "../state/appContext";
 import type { GenerationDetail, GenerationStreamEvent } from "../types/contracts";
 import { validateGeneration } from "./validation";
 
 function statusLabel(current: CurrentGeneration | null): string {
   if (current === null) {
-    return "Nothing generated yet";
+    return strings.generate.statusEmpty;
   }
   switch (current.status) {
     case "queued":
-      return "Queued. Waiting for the worker.";
+      return strings.generate.statusQueued;
     case "running":
       return current.sentenceCount > 0
-        ? `Generating: ${current.sentenceIndex} of ${current.sentenceCount} sentences done.`
-        : "Generating…";
+        ? strings.generate.statusGenerating(current.sentenceIndex, current.sentenceCount)
+        : strings.generate.statusGeneratingUnknown;
     case "cancelling":
-      return "Cancelling…";
+      return strings.generate.statusCancelling;
     case "succeeded":
       return current.detail === undefined
-        ? "Finished, but the details could not be loaded. Check the message above."
-        : "Audio ready.";
+        ? strings.generate.statusMissingDetail
+        : strings.generate.statusReady;
     case "failed":
-      return "Generation failed. See the message above.";
+      return strings.generate.statusFailed;
     case "cancelled":
-      return "Generation cancelled. No audio was saved.";
+      return strings.generate.statusCancelled;
   }
 }
 
@@ -217,17 +218,15 @@ export function GenerateBar() {
   const hasVoices = state.voices.length > 0;
 
   return (
-    <section className="section" aria-labelledby="generate-heading">
-      <h2 id="generate-heading">Generate</h2>
+    <section className="section" aria-labelledby="generate-heading" aria-busy={active}>
+      <h2 id="generate-heading">{strings.generate.heading}</h2>
 
       {hasVoices ? (
-        <p className="hint">
-          Start a generation, watch progress, and cancel if you change your mind.
-        </p>
+        <p className="hint">{strings.generate.hint}</p>
       ) : (
         <p className="stat warning">
-          No voices installed, so generation is disabled. Run{" "}
-          <code>tts add-voice &lt;name&gt;</code> in a terminal, then reload this page.
+          {strings.generate.noVoicesPrefix} <code>tts add-voice &lt;name&gt;</code>{" "}
+          {strings.generate.noVoicesSuffix}
         </p>
       )}
 
@@ -235,7 +234,12 @@ export function GenerateBar() {
         {statusLabel(current)}
       </p>
       {active && current !== null && current.sentenceCount > 0 ? (
-        <progress value={current.sentenceIndex} max={current.sentenceCount} />
+        <progress
+          aria-label={strings.generate.progressLabel}
+          aria-valuetext={`${current.sentenceIndex} of ${current.sentenceCount} sentences`}
+          value={current.sentenceIndex}
+          max={current.sentenceCount}
+        />
       ) : null}
 
       <div className="button-row">
@@ -246,7 +250,7 @@ export function GenerateBar() {
             void handleGenerate();
           }}
         >
-          Generate audio
+          {strings.generate.generate}
         </button>
         {active ? (
           <button
@@ -257,7 +261,9 @@ export function GenerateBar() {
               void handleCancel();
             }}
           >
-            {current?.status === "cancelling" ? "Cancelling…" : "Cancel generation"}
+            {current?.status === "cancelling"
+              ? strings.generate.cancelling
+              : strings.generate.cancel}
           </button>
         ) : null}
       </div>
