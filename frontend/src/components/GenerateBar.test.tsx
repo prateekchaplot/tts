@@ -25,4 +25,10 @@ describe("GenerateBar", () => {
     expect(html).toContain("Nothing generated yet");
     expect(html).not.toContain("<progress");
   });
+
+  it("exposes the busy state and a live status line", () => {
+    const html = renderBar();
+    expect(html).toContain('aria-busy="false"');
+    expect(html).toContain('aria-live="polite"');
+  });
 });

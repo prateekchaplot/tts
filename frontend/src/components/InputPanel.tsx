@@ -8,6 +8,7 @@
 import type { ChangeEvent } from "react";
 import { api } from "../api";
 import { toApiError } from "../api/client";
+import { strings } from "../strings";
 import { useApp } from "../state/appContext";
 import { MAX_INPUT_CHARS, inputTooLongMessage } from "./validation";
 
@@ -37,15 +38,15 @@ export function InputPanel() {
 
   return (
     <section className="section" aria-labelledby="input-heading">
-      <h2 id="input-heading">Text</h2>
+      <h2 id="input-heading">{strings.input.heading}</h2>
 
       <div className="field">
-        <label htmlFor="input-text">Text to speak</label>
+        <label htmlFor="input-text">{strings.input.label}</label>
         <textarea
           id="input-text"
           value={state.inputText}
           rows={10}
-          placeholder="Paste or type the text you want to hear. Paragraph breaks are preserved."
+          placeholder={strings.input.placeholder}
           aria-describedby="input-help input-count"
           onChange={(event) => {
             dispatch({ type: "SET_INPUT", text: event.target.value });
@@ -54,7 +55,7 @@ export function InputPanel() {
       </div>
 
       <div className="field-row">
-        <label htmlFor="input-file">Upload plain text</label>
+        <label htmlFor="input-file">{strings.input.uploadLabel}</label>
         <input
           id="input-file"
           type="file"
@@ -65,18 +66,21 @@ export function InputPanel() {
           }}
         />
         <span className="hint" id="input-help">
-          Only plain-text .txt files up to 2 MB are accepted.
+          {strings.input.uploadHelp}
         </span>
       </div>
 
       <p id="input-count" className={tooLong ? "stat warning" : "stat"} aria-live="polite">
-        {state.inputText.length.toLocaleString()} / {MAX_INPUT_CHARS.toLocaleString()} characters
-        {state.sourceFilename === null ? "" : ` · loaded from ${state.sourceFilename}`}
+        {strings.input.characterCount(
+          state.inputText.length,
+          MAX_INPUT_CHARS,
+          state.sourceFilename,
+        )}
       </p>
 
       {tooLong ? (
         <p className="stat warning" role="status">
-          {inputTooLongMessage(state.inputText.length)} Shorten the text before generating.
+          {inputTooLongMessage(state.inputText.length)} {strings.input.tooLongSuffix}
         </p>
       ) : null}
     </section>

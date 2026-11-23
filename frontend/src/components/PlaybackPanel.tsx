@@ -9,6 +9,7 @@
 
 import { useEffect } from "react";
 import { usePlayback } from "../hooks/usePlayback";
+import { strings } from "../strings";
 import { useApp, type CurrentGeneration } from "../state/appContext";
 import { DownloadBar } from "./DownloadBar";
 import { formatClock, SubtitleView } from "./SubtitleView";
@@ -16,19 +17,17 @@ import { formatClock, SubtitleView } from "./SubtitleView";
 /** Why playback is not available yet; null when there is something to play. */
 export function playbackMessage(current: CurrentGeneration | null): string | null {
   if (current === null) {
-    return "Generate audio to play it back here.";
+    return strings.playback.empty;
   }
   switch (current.status) {
     case "succeeded":
-      return current.detail === undefined
-        ? "Finished, but the details could not be loaded. Check the message above."
-        : null;
+      return current.detail === undefined ? strings.playback.missingDetail : null;
     case "failed":
-      return "Nothing to play: the generation failed. See the message above.";
+      return strings.playback.failed;
     case "cancelled":
-      return "Nothing to play: the generation was cancelled.";
+      return strings.playback.cancelled;
     default:
-      return "Playback appears here when generation finishes.";
+      return strings.playback.inProgress;
   }
 }
 
@@ -94,16 +93,16 @@ export function PlaybackPanel() {
 
   const duration =
     detail !== null && detail.durationSeconds !== null
-      ? `${formatClock(detail.durationSeconds * 1000)} long`
+      ? strings.playback.duration(formatClock(detail.durationSeconds * 1000))
       : null;
   const aligned =
     detail !== null && detail.alignedWordRatio !== null && detail.alignedWordRatio >= 0
-      ? `${Math.round(detail.alignedWordRatio * 100)}% of words timed`
+      ? strings.playback.aligned(Math.round(detail.alignedWordRatio * 100))
       : null;
 
   return (
     <section className="section" aria-labelledby="playback-heading">
-      <h2 id="playback-heading">Playback and subtitles</h2>
+      <h2 id="playback-heading">{strings.playback.heading}</h2>
 
       {message !== null ? <p className="stat">{message}</p> : null}
 
@@ -115,13 +114,10 @@ export function PlaybackPanel() {
               src={audioUrl}
               controls
               preload="metadata"
-              aria-label="Generated audio"
+              aria-label={strings.playback.audioLabel}
             />
           ) : (
-            <p className="stat warning">
-              The audio file could not be loaded, so playback is unavailable. Downloads may still
-              work.
-            </p>
+            <p className="stat warning">{strings.playback.audioUnavailable}</p>
           )}
 
           <div className="button-row playback-controls">
@@ -129,9 +125,9 @@ export function PlaybackPanel() {
               type="button"
               disabled={!audioReady}
               onClick={toggle}
-              aria-label={isPlaying ? "Pause audio" : "Play audio"}
+              aria-label={isPlaying ? strings.playback.pauseLabel : strings.playback.playLabel}
             >
-              {isPlaying ? "Pause" : "Play"}
+              {isPlaying ? strings.playback.pause : strings.playback.play}
             </button>
             <button
               type="button"
@@ -141,7 +137,7 @@ export function PlaybackPanel() {
                 skip(-5);
               }}
             >
-              Back 5 s
+              {strings.playback.back}
             </button>
             <button
               type="button"
@@ -151,7 +147,7 @@ export function PlaybackPanel() {
                 skip(5);
               }}
             >
-              Forward 5 s
+              {strings.playback.forward}
             </button>
             {duration !== null || aligned !== null ? (
               <p className="stat playback-meta">
@@ -160,10 +156,7 @@ export function PlaybackPanel() {
             ) : null}
           </div>
 
-          <p className="hint">
-            Keyboard: Space plays or pauses, Left and Right arrows skip 5 seconds when focus is
-            outside a control. Click a word or a sentence to jump there.
-          </p>
+          <p className="hint">{strings.playback.hint}</p>
 
           <SubtitleView
             wordTimings={wordTimings}

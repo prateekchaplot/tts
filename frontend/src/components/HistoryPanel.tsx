@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState, type Dispatch } from "react";
 import { api } from "../api";
 import { toApiError } from "../api/client";
+import { strings } from "../strings";
 import { useApp, type AppAction } from "../state/appContext";
 import type { GenerationDetail, GenerationSummary } from "../types/contracts";
 
@@ -33,18 +34,20 @@ export function historyStatusText(item: GenerationSummary): string {
   switch (item.status) {
     case "succeeded":
       return item.durationSeconds === null
-        ? "Ready"
-        : `Ready · ${Math.round(item.durationSeconds)} s`;
+        ? strings.history.statusReady
+        : strings.history.statusReadyWithDuration(item.durationSeconds);
     case "failed":
-      return item.error === null ? "Failed" : `Failed: ${item.error.message}`;
+      return item.error === null
+        ? strings.history.statusFailed
+        : strings.history.statusFailedWithReason(item.error.message);
     case "cancelled":
-      return "Cancelled";
+      return strings.history.statusCancelled;
     case "queued":
-      return "Queued";
+      return strings.history.statusQueued;
     case "running":
-      return "Generating…";
+      return strings.history.statusRunning;
     case "cancelling":
-      return "Cancelling…";
+      return strings.history.statusCancelling;
   }
 }
 
@@ -62,7 +65,7 @@ export function historyPreview(item: GenerationSummary): string {
   if (item.inputPreview.trim().length > 0) {
     return item.inputPreview;
   }
-  return item.inputFilename ?? "(no preview)";
+  return item.inputFilename ?? strings.history.noPreview;
 }
 
 /** Wide viewports open the panel; narrow ones start collapsed (section 12). */
@@ -89,19 +92,44 @@ export interface HistoryListProps {
   items: GenerationSummary[];
   total: number;
   busy: HistoryBusy;
+  /** Row awaiting delete confirmation, or null. */
+  confirmingId: string | null;
+  /** Row whose Delete button should take focus after a cancelled confirmation. */
+  focusDeleteId: string | null;
   onRestore: (item: GenerationSummary) => void;
-  onDelete: (item: GenerationSummary) => void;
+  onRequestDelete: (item: GenerationSummary) => void;
+  onConfirmDelete: (item: GenerationSummary) => void;
+  onKeep: () => void;
 }
 
 /** Presentational list; kept separate so it can be tested without effects. */
-export function HistoryList({ items, total, busy, onRestore, onDelete }: HistoryListProps) {
-  const countLabel = `${total} saved generation${total === 1 ? "" : "s"}`;
+export function HistoryList({
+  items,
+  total,
+  busy,
+  confirmingId,
+  focusDeleteId,
+  onRestore,
+  onRequestDelete,
+  onConfirmDelete,
+  onKeep,
+}: HistoryListProps) {
+  const countLabel = strings.history.countLabel(total);
+  const restoreFocusRef = useRef<HTMLButtonElement | null>(null);
+
+  // Focus returns to Delete after "Keep" (and only then), so a keyboard user
+  // does not land on the document body when the confirm buttons unmount.
+  useEffect(() => {
+    if (focusDeleteId !== null) {
+      restoreFocusRef.current?.focus();
+    }
+  }, [focusDeleteId]);
 
   if (items.length === 0) {
     return (
       <>
         <p className="stat">{countLabel}</p>
-        <p className="hint">Nothing here yet. Generate audio and it will appear in this list.</p>
+        <p className="hint">{strings.history.empty}</p>
       </>
     );
   }
@@ -109,13 +137,11 @@ export function HistoryList({ items, total, busy, onRestore, onDelete }: History
   return (
     <>
       <p className="stat">{countLabel}</p>
-      <p className="hint">
-        Open a finished generation to load its audio and subtitles. Deleting an entry removes only
-        that entry.
-      </p>
+      <p className="hint">{strings.history.hint}</p>
       <ul className="history-list">
         {items.map((item) => {
           const preview = historyPreview(item);
+          const confirming = confirmingId === item.generationId;
           const restorable = canRestore(item) && busy === null;
           const deletable = canDelete(item) && busy === null;
           const restoring =
@@ -135,26 +161,57 @@ export function HistoryList({ items, total, busy, onRestore, onDelete }: History
               <div className="button-row history-actions">
                 <button
                   type="button"
-                  disabled={!restorable}
-                  aria-label={`Open generation: ${preview}`}
+                  disabled={!restorable || confirming}
+                  aria-label={strings.history.openLabel(preview)}
                   onClick={() => {
                     onRestore(item);
                   }}
                 >
-                  {restoring ? "Opening…" : "Open"}
+                  {restoring ? strings.history.opening : strings.history.open}
                 </button>
-                <button
-                  type="button"
-                  className="secondary"
-                  disabled={!deletable}
-                  aria-label={`Delete generation: ${preview}`}
-                  onClick={() => {
-                    onDelete(item);
-                  }}
-                >
-                  {deleting ? "Deleting…" : "Delete"}
-                </button>
+                {confirming ? (
+                  <>
+                    <button
+                      type="button"
+                      autoFocus
+                      disabled={!deletable}
+                      aria-label={strings.history.confirmDeleteLabel(preview)}
+                      onClick={() => {
+                        onConfirmDelete(item);
+                      }}
+                    >
+                      {deleting ? strings.history.deleting : strings.history.confirmDelete}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary"
+                      disabled={busy !== null}
+                      aria-label={strings.history.keepLabel(preview)}
+                      onClick={onKeep}
+                    >
+                      {strings.history.keep}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="secondary"
+                    ref={focusDeleteId === item.generationId ? restoreFocusRef : undefined}
+                    disabled={!deletable}
+                    aria-label={strings.history.deleteLabel(preview)}
+                    onClick={() => {
+                      onRequestDelete(item);
+                    }}
+                  >
+                    {strings.history.delete}
+                  </button>
+                )}
               </div>
+              {confirming ? (
+                <p className="hint history-confirm" role="status">
+                  {strings.history.confirmPrompt}
+                </p>
+              ) : null}
             </li>
           );
         })}
@@ -166,6 +223,8 @@ export function HistoryList({ items, total, busy, onRestore, onDelete }: History
 export function HistoryPanel() {
   const { state, dispatch } = useApp();
   const [busy, setBusy] = useState<HistoryBusy>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [focusDeleteId, setFocusDeleteId] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(() => historyStartsOpen(readNarrowViewport()));
   const restoredUrlRef = useRef<string | null>(null);
   const refreshedRef = useRef<string | null>(null);
@@ -227,6 +286,7 @@ export function HistoryPanel() {
   }, []);
 
   async function handleRestore(item: GenerationSummary): Promise<void> {
+    setConfirmingId(null);
     setBusy({ id: item.generationId, kind: "restore" });
     let detail: GenerationDetail;
     try {
@@ -257,6 +317,8 @@ export function HistoryPanel() {
   }
 
   async function handleDelete(item: GenerationSummary): Promise<void> {
+    setConfirmingId(null);
+    setFocusDeleteId(null);
     setBusy({ id: item.generationId, kind: "delete" });
     try {
       await api.deleteGeneration(item.generationId);
@@ -278,17 +340,27 @@ export function HistoryPanel() {
         }}
       >
         <summary>
-          <h2 id="history-heading">History</h2>
+          <h2 id="history-heading">{strings.history.heading}</h2>
         </summary>
         <HistoryList
           items={state.history.items}
           total={state.history.total}
           busy={busy}
+          confirmingId={confirmingId}
+          focusDeleteId={focusDeleteId}
           onRestore={(item) => {
             void handleRestore(item);
           }}
-          onDelete={(item) => {
+          onRequestDelete={(item) => {
+            setFocusDeleteId(null);
+            setConfirmingId(item.generationId);
+          }}
+          onConfirmDelete={(item) => {
             void handleDelete(item);
+          }}
+          onKeep={() => {
+            setFocusDeleteId(confirmingId);
+            setConfirmingId(null);
           }}
         />
       </details>

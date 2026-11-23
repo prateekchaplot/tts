@@ -4,6 +4,7 @@
  * range) can be unit-tested without a DOM.
  */
 
+import { strings } from "../strings";
 import { RATE_RANGE, VOLUME_RANGE } from "../types/contracts";
 import type { ErrorInfo } from "../types/contracts";
 
@@ -12,12 +13,6 @@ import type { ErrorInfo } from "../types/contracts";
  * this only warns the user before a request (FR-01).
  */
 export const MAX_INPUT_CHARS = 50_000;
-
-const EMPTY_INPUT_MESSAGE =
-  "Enter some text before generating. Paste or upload text and try again.";
-
-const NO_VOICES_INSTALLED_MESSAGE =
-  "No voices are installed. Run `tts add-voice <name>` in a terminal, then reload this page.";
 
 function round(value: number, factor: number): number {
   return Math.round(value * factor) / factor;
@@ -41,7 +36,7 @@ export function clampVolume(value: number): number {
 
 /** Message for the FR-01 length warning, matching the server's wording. */
 export function inputTooLongMessage(length: number): string {
-  return `Input is ${length.toLocaleString()} characters; the limit is ${MAX_INPUT_CHARS.toLocaleString()}.`;
+  return strings.validation.tooLong(length, MAX_INPUT_CHARS);
 }
 
 /**
@@ -51,7 +46,7 @@ export function inputTooLongMessage(length: number): string {
  */
 export function validateGeneration(text: string, voiceId: string | null): ErrorInfo | null {
   if (text.trim().length === 0) {
-    return { code: "EMPTY_INPUT", message: EMPTY_INPUT_MESSAGE, details: null };
+    return { code: "EMPTY_INPUT", message: strings.validation.emptyInput, details: null };
   }
   if (text.length > MAX_INPUT_CHARS) {
     return {
@@ -61,7 +56,7 @@ export function validateGeneration(text: string, voiceId: string | null): ErrorI
     };
   }
   if (voiceId === null) {
-    return { code: "NO_VOICES_INSTALLED", message: NO_VOICES_INSTALLED_MESSAGE, details: null };
+    return { code: "NO_VOICES_INSTALLED", message: strings.validation.noVoices, details: null };
   }
   return null;
 }

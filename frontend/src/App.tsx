@@ -16,6 +16,7 @@ import { PlaybackPanel } from "./components/PlaybackPanel";
 import { VoicePanel } from "./components/VoicePanel";
 import { clampRate, clampVolume } from "./components/validation";
 import { useApp } from "./state/appContext";
+import { strings } from "./strings";
 
 export function App() {
   const { dispatch } = useApp();
@@ -63,23 +64,28 @@ export function App() {
 
   return (
     <div className="app">
+      <a className="skip-link" href="#main">
+        {strings.app.skipLink}
+      </a>
       <header className="app-header">
-        <h1>tts</h1>
-        <p className="tagline">Local text to speech with synchronized subtitles.</p>
-        {apiMode === "mock" ? <p className="badge">Mock mode: sample data</p> : null}
+        <h1>{strings.app.title}</h1>
+        <p className="tagline">{strings.app.tagline}</p>
+        {apiMode === "mock" ? <p className="badge">{strings.app.mockBadge}</p> : null}
       </header>
 
-      <ErrorBanner />
-      <InputPanel />
-      <VoicePanel />
-      <GenerateBar />
+      <main id="main" tabIndex={-1}>
+        <ErrorBanner />
+        <InputPanel />
+        <VoicePanel />
+        <GenerateBar />
 
-      <PlaybackPanel />
+        <PlaybackPanel />
 
-      <HistoryPanel />
+        <HistoryPanel />
+      </main>
 
       <footer className="app-footer">
-        <p>Everything runs on this machine; nothing is uploaded.</p>
+        <p>{strings.app.footer}</p>
       </footer>
     </div>
   );
