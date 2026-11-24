@@ -13,6 +13,14 @@ import { uniqueText } from "../support/run";
 import { parseSrt, parseVtt } from "../support/subtitles";
 import { generateInUi, openApp } from "../support/ui";
 
+/**
+ * Piper pads each sentence with leading silence, so the first word - and the
+ * first cue derived from it - starts a little after the file begins. Anything
+ * beyond this bound would mean the cue is offset from the audio rather than
+ * tracking it.
+ */
+const MAX_FIRST_CUE_START_MS = 1000;
+
 async function downloadText(
   page: Page,
   label: string,
@@ -68,9 +76,14 @@ test("AC10: downloaded SRT/VTT parse and match the audio timing", async ({
     expect(vtt[index]?.text).toBe(cue.text);
   }
 
-  // What a caption tool checks: starts at zero, monotonic, inside the audio.
+  // What a caption tool checks: begins at the start of the audio, monotonic,
+  // inside the audio. The first cue follows the first audible word rather than
+  // snapping to zero, so it may sit inside piper's leading silence.
   for (const captions of [srt, vtt]) {
-    expect(captions[0]?.startMs).toBe(0);
+    expect(captions[0]?.startMs ?? -1).toBeGreaterThanOrEqual(0);
+    expect(captions[0]?.startMs ?? Infinity).toBeLessThanOrEqual(
+      MAX_FIRST_CUE_START_MS,
+    );
     for (let index = 1; index < captions.length; index += 1) {
       const previous = captions[index - 1];
       const current = captions[index];
