@@ -268,7 +268,10 @@ tts/
       char_end: int
       samples: "numpy.ndarray"     # float32 PCM, mono
       sample_rate: int
-      phoneme_alignments: list[tuple[str, int]]  # (phoneme, num_samples), BOS/EOS/pad excluded
+      phoneme_alignments: list[tuple[str, int]]  # (phoneme, num_samples) in audio order,
+                                                 # boundary markers (^ $ _) included so the
+                                                 # counts sum to len(samples); timing skips
+                                                 # them for word matching
       supports_alignments: bool    # False → degraded mode
 
   @dataclass(frozen=True)

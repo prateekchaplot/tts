@@ -74,8 +74,11 @@ def test_synthesizes_three_sentences_with_alignments(loaded_voice: LoadedVoice) 
         assert sentence.samples.size > 0
         assert sentence.supports_alignments is True
         assert sentence.phoneme_alignments
-        assert all(phoneme not in {"^", "$", "_"} for phoneme, _ in sentence.phoneme_alignments)
+        assert any(phoneme in {"^", "$", "_"} for phoneme, _ in sentence.phoneme_alignments)
         assert all(count > 0 for _, count in sentence.phoneme_alignments)
+        # Boundary markers carry the leading and trailing silence, so the whole
+        # alignment covers the sentence audio exactly.
+        assert sum(count for _, count in sentence.phoneme_alignments) == len(sentence.samples)
 
 
 def _mean_seconds(loaded_voice: LoadedVoice, rate: float, runs: int = 7) -> float:

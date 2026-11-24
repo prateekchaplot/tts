@@ -120,7 +120,7 @@ def test_maps_each_segment_to_a_sentence_with_offsets() -> None:
     assert seen == result.sentences
     assert all(sentence.samples.dtype == np.float32 for sentence in result.sentences)
 
-    assert result.sentences[0].phoneme_alignments == [("h", 1)]
+    assert result.sentences[0].phoneme_alignments == [("^", 1), ("h", 1), ("$", 1)]
     assert result.sentences[0].supports_alignments is True
     assert result.sentences[1].phoneme_alignments == [("w", 3)]
 
@@ -147,7 +147,7 @@ def test_combines_multiple_chunks_for_one_segment() -> None:
 
     sentence = result.sentences[0]
     assert sentence.samples.tolist() == pytest.approx([0.1, 0.2, 0.3])
-    assert sentence.phoneme_alignments == [("w", 1), ("x", 2)]
+    assert sentence.phoneme_alignments == [("w", 1), ("x", 2), ("_", 1)]
     assert result.total_samples == 3
 
 
