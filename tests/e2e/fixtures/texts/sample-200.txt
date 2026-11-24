@@ -1,0 +1,1 @@
+This text was uploaded as plain text, and it proves the upload path reaches the same input box. The content stays editable, so it can be corrected before it is spoken, exactly like typed input. Uploading alone never starts a generation.
