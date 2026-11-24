@@ -93,6 +93,40 @@ def test_maps_words_to_their_phoneme_spans() -> None:
     assert voice.calls == ["Hello", "world."]
 
 
+def test_boundary_phonemes_offset_words_into_their_real_audio() -> None:
+    """Piper's BOS/EOS silence must move word starts, not be discarded.
+
+    Regression: the engine used to drop ``^``/``$``/``_`` alignments, which
+    made every word of a sentence start early by the leading silence.
+    """
+    voice = FakeVoice({"Hello": HELLO, "world.": WORLD})
+    sentence = _sentence(
+        "Hello world.",
+        [
+            ("^", 150),
+            ("h", 100),
+            ("ə", 100),
+            ("l", 100),
+            ("ˈoʊ", 100),
+            (" ", 100),
+            ("w", 100),
+            ("ɜː", 100),
+            ("l", 100),
+            ("d", 100),
+            (".", 100),
+            ("$", 100),
+        ],
+    )
+
+    timings, ratio = derive_word_timings(_loaded(voice), _result([sentence]))
+
+    assert [(word.text, word.start_ms, word.end_ms, word.aligned) for word in timings] == [
+        ("Hello", 150, 550, True),
+        ("world.", 650, 1150, True),
+    ]
+    assert ratio == pytest.approx(1.0)
+
+
 def test_timings_stay_monotonic_across_sentences() -> None:
     voice = FakeVoice({"Hello": HELLO, "world.": WORLD})
     first = _sentence("Hello world.", _hello_world_alignments())

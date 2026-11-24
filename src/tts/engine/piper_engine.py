@@ -15,10 +15,6 @@ if TYPE_CHECKING:
 
     from tts.voices.store import LoadedVoice
 
-# Values of piper.const.BOS / EOS / PAD. Duplicated so importing this module
-# never imports piper (and therefore onnxruntime).
-_BOUNDARY_PHONEMES = frozenset({"^", "$", "_"})
-
 
 def synthesize(
     voice: LoadedVoice,
@@ -113,11 +109,15 @@ def _synthesize_segment(
 
 
 def _chunk_alignments(chunk: AudioChunk) -> list[tuple[str, int]]:
-    """Return a chunk's phoneme sample counts without BOS/EOS/pad entries."""
+    """Return every phoneme sample count, boundary markers included.
+
+    Piper's BOS/EOS/pad entries carry the leading and trailing silence of a
+    sentence. ``timing/reconcile`` skips them when matching words but still
+    advances its sample cursor by their durations, so dropping them here would
+    shift every word of the sentence earlier by the leading silence.
+    """
     if not chunk.phoneme_alignments:
         return []
     return [
-        (alignment.phoneme, int(alignment.num_samples))
-        for alignment in chunk.phoneme_alignments
-        if alignment.phoneme not in _BOUNDARY_PHONEMES
+        (alignment.phoneme, int(alignment.num_samples)) for alignment in chunk.phoneme_alignments
     ]
