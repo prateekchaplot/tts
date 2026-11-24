@@ -11,6 +11,15 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+FAULT_NONE = "none"
+"""Default fault-injection mode: no injected failures."""
+
+FAULT_ENGINE = "engine"
+"""Fault mode that fails a generation after its first sentence (§11, §15)."""
+
+FAULT_MODES = frozenset({FAULT_NONE, FAULT_ENGINE})
+"""Fault-injection modes accepted by ``TTS_FAULT``."""
+
 
 def _default_data_dir() -> Path:
     if sys.platform == "win32":
@@ -31,6 +40,7 @@ class Settings:
     history_limit: int
     log_level: str
     default_voice_id: str
+    fault: str = FAULT_NONE
 
     @classmethod
     def load(cls) -> Settings:
@@ -40,11 +50,16 @@ class Settings:
             logger.warning("Unknown TTS_LOG_LEVEL %r; falling back to INFO", raw_log_level)
             raw_log_level = "INFO"
 
+        raw_fault = os.environ.get("TTS_FAULT", FAULT_NONE).strip().lower()
+        if raw_fault not in FAULT_MODES:
+            logger.warning("Unknown TTS_FAULT %r; fault injection disabled", raw_fault)
+            raw_fault = FAULT_NONE
+
         data_dir = Path(os.environ.get("TTS_DATA_DIR", _default_data_dir())).expanduser()
         data_dir.mkdir(parents=True, exist_ok=True)
         (data_dir / "logs").mkdir(parents=True, exist_ok=True)
 
-        return cls(
+        settings = cls(
             host=os.environ.get("TTS_HOST", "127.0.0.1"),
             port=int(os.environ.get("TTS_PORT", "8321")),
             data_dir=data_dir,
@@ -52,7 +67,11 @@ class Settings:
             history_limit=int(os.environ.get("TTS_HISTORY_LIMIT", "20")),
             log_level=raw_log_level,
             default_voice_id=os.environ.get("TTS_DEFAULT_VOICE", "en_US-lessac-medium"),
+            fault=raw_fault,
         )
+        if settings.fault != FAULT_NONE:
+            logger.warning("Fault injection enabled: %s", settings.fault)
+        return settings
 
 
 def configure_logging(settings: Settings) -> None:

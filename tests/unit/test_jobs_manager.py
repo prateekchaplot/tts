@@ -8,6 +8,7 @@ import queue
 import threading
 import time
 import wave
+from collections.abc import Iterator
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -132,8 +133,9 @@ class Harness:
         self.engine = engine
 
 
-@pytest.fixture
-def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Harness:
+def _build_harness(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, fault: str = "none"
+) -> Harness:
     """Build a manager with a fake engine and an installed fake voice."""
     _install_fake_voice(tmp_path)
     settings = Settings(
@@ -144,6 +146,7 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Harness:
         history_limit=20,
         log_level="INFO",
         default_voice_id=VOICE_ID,
+        fault=fault,
     )
     dal = Dal(tmp_path)
     manager = JobManager(dal, settings)
@@ -157,10 +160,25 @@ def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Harness:
     monkeypatch.setattr(manager_module, "synthesize", engine.synthesize)
     monkeypatch.setattr(manager_module, "derive_word_timings", _fake_timings)
 
-    harness = Harness(manager, dal, engine)
-    yield harness
-    manager.close()
-    dal.close()
+    return Harness(manager, dal, engine)
+
+
+@pytest.fixture
+def harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Harness]:
+    """Build a manager with fault injection disabled."""
+    built = _build_harness(tmp_path, monkeypatch)
+    yield built
+    built.manager.close()
+    built.dal.close()
+
+
+@pytest.fixture
+def fault_harness(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[Harness]:
+    """Build a manager that fails the generation after its first sentence."""
+    built = _build_harness(tmp_path, monkeypatch, fault=manager_module.FAULT_ENGINE)
+    yield built
+    built.manager.close()
+    built.dal.close()
 
 
 def _wait_for_status(
@@ -347,32 +365,26 @@ def test_a_generation_without_audio_fails_instead_of_succeeding(harness: Harness
     assert not part_path.exists()
 
 
-def test_injected_fault_marks_the_job_failed_with_engine_error(
-    harness: Harness, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv(manager_module.FAULT_ENV_VAR, manager_module.FAULT_ENGINE)
-    generation_id = harness.manager.submit(VOICE_ID, "One. Two.")
+def test_injected_fault_marks_the_job_failed_with_engine_error(fault_harness: Harness) -> None:
+    generation_id = fault_harness.manager.submit(VOICE_ID, "One. Two.")
 
-    row = _wait_for_status(harness.dal, generation_id, {"failed"})
-    part_path, final_path = _generation_files(harness, generation_id)
+    row = _wait_for_status(fault_harness.dal, generation_id, {"failed"})
+    part_path, final_path = _generation_files(fault_harness, generation_id)
 
     assert row["error_code"] == "ENGINE_ERROR"
     assert not final_path.exists()
     assert not part_path.exists()
 
 
-def test_a_cancelled_job_is_not_turned_into_a_failure(
-    harness: Harness, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    monkeypatch.setenv(manager_module.FAULT_ENV_VAR, manager_module.FAULT_ENGINE)
+def test_a_cancelled_job_is_not_turned_into_a_failure(fault_harness: Harness) -> None:
     gate = threading.Event()
-    harness.engine.gate = gate
-    generation_id = harness.manager.submit(VOICE_ID, "One. Two.")
-    assert harness.engine.started.wait(timeout=10)
+    fault_harness.engine.gate = gate
+    generation_id = fault_harness.manager.submit(VOICE_ID, "One. Two.")
+    assert fault_harness.engine.started.wait(timeout=10)
 
-    assert harness.manager.cancel(generation_id) == "cancelling"
+    assert fault_harness.manager.cancel(generation_id) == "cancelling"
     gate.set()
-    row = _wait_for_status(harness.dal, generation_id, {"cancelled"})
+    row = _wait_for_status(fault_harness.dal, generation_id, {"cancelled"})
 
     assert row["status"] == "cancelled"
     assert row["error_code"] is None

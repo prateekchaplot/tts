@@ -251,7 +251,7 @@ tts/
 ### 7.1 `config`
 - **Responsibility:** parse environment into an immutable `Settings` object and configure logging.
 - **Owns:** `src/tts/config.py`
-- **Public interface:** `Settings.load()` → dataclass with fields `host, port, data_dir, max_input_chars, history_limit, log_level, default_voice_id`; `configure_logging(settings)`.
+- **Public interface:** `Settings.load()` → dataclass with fields `host, port, data_dir, max_input_chars, history_limit, log_level, default_voice_id, fault` (where `fault` is the `TTS_FAULT` test hook, `none` by default); `configure_logging(settings)`.
 - **Depends on:** stdlib only.
 - **Must not:** read env vars anywhere else; mutate `os.environ`; do I/O beyond creating the data dir and logs dir.
 - **PRD requirements covered:** NFR-06, A-3.
