@@ -38,7 +38,7 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty)_ | | | | |
+| T5.3 | Measurement | `arch/tts/t5.3` | 3 texts (139 / 1,999 / 4,975 chars) x 2 voices, 3 runs of the 2,000-char text; `docs/MEASUREMENTS.md` written with hardware note; 160 measurable word onsets (p95 15 ms, max 32 ms); SSE p95 191 ms; TTF audio ~3 s | PR open |
 
 ## Remaining
 
@@ -67,7 +67,6 @@ _All P4 tasks done._
 | ID | Task | Files | Deps | Acceptance criteria (summary) |
 |---|---|---|---|---|
 | T5.2 | Docs | `README.md`, `docs/USER_GUIDE.md`, `docs/KNOWN_LIMITATIONS.md`, `docs/PRD.md` | T5.1 | Fresh-machine workflow completes using README alone |
-| T5.3 | Measurement | `tests/measure.py`, `docs/MEASUREMENTS.md` | T4.1 | Performance and timing measurements with hardware note |
 
 ## Notes
 
@@ -159,3 +158,8 @@ _All P4 tasks done._
 - T5.1 verification: 15/15 Playwright specs (three runs, one from empty data dirs); `npx tsc -p tests/e2e --noEmit`; 201 pytest unit; 16 integration (`TTS_DATA_DIR=.venv/tts-data`, `--basetemp .venv/ptmp-t51-int`); 111 Vitest; Ruff check/format; strict mypy; ESLint; frontend `tsc --noEmit`; Prettier (CRLF); `git diff --check`. PR CI must confirm the two-server topology on Linux.
 
 - Timing fix (found by T5.3 measurement, merged before T5.3): `engine/piper_engine.py` dropped piper's `^`/`$`/`_` alignments entirely, discarding their sample counts, so `timing/reconcile.py` placed every word early by the sentence-leading silence (measured 60-320 ms on the two test voices, exceeding AC7's ±100 ms target). `_chunk_alignments` now keeps every entry; reconcile already skips boundary phonemes for word matching while still advancing its sample cursor by their durations. ARCHITECTURE §7.2's `SentenceAudio.phoneme_alignments` comment was updated in the same PR (shared-file protocol), and alignment counts now sum exactly to `len(samples)` as §14.5 point 1 asserts. Dependent tasks: T1.2, T1.3, T5.1 (AC7 tolerance and the AC10 spec, whose "first cue starts at zero" assertion became "first cue starts at or before the first audible word"), T5.3.
+
+- T5.3 measurement: `tests/measure.py` starts the real app (`create_app`) in a background uvicorn thread on an ephemeral port with `TTS_DATA_DIR=.venv/measure-data` and drives generations through the public HTTP API, so the numbers describe the shipped path rather than a direct engine call. Texts: 139, 1,999 and 4,975 characters; `en_US-lessac-medium` and `en_US-amy-medium`; the 2,000-character text repeated 3 times per voice after a warm-up generation. Hardware note (recorded in the report): 16 logical cores (Intel Family 6 Model 154), 15.8 GiB RAM, Windows 11 build 26300, Python 3.12.2, piper-tts 1.8.0, onnxruntime 1.32.0, CPU inference, single process.
+- T5.3 results: time-to-first-audio for the 1,999-character text is 2,960 ms median on `lessac` and 3,210 ms on `amy` (the app serves the finished WAV, so this equals total synthesis time; the first progress event arrives at 87-93 ms). Per-sentence SSE progress: pooled p95 191 ms, median 129 ms over 234 intervals, inside section 11's 250 ms target. Word-start deviation over 160 measurable onsets: p95 |deviation| 15 ms, max 32 ms across both voices. This confirms A-3's +/-100 ms word-start tolerance, so `tests/e2e/support/env.ts` keeps `WORD_START_TOLERANCE_MS = 100` unchanged; no T5.1 edit was needed.
+- T5.3 honesty and caveats: only 160 of 3,656 word instances are measurable by signal (3,168 excluded for lacking a silent gap before the word, 491 unaligned by design), because connected speech rarely pauses between words. Every exclusion is counted in `MEASUREMENTS.md`, and the report says plainly that this is a signal proxy pending the manual AC7 listening checklist, which lists 8 words (0/25/50/75% through the target text) and stays marked pending until a human listens.
+- T5.3 harness bug found and fixed before the numbers were recorded: 22,050 Hz does not divide into whole 10 ms frames (220 samples = 9.977 ms), so converting frame indexes with a nominal 10 ms invented a 0.23% scale error - a 260 ms "late drift" at 115 s that looked like a timing defect. Frame positions now use the exact frame duration; the apparent drift disappeared and the residual deviations are the small numbers above. The earlier "unexplained outlier" for sentences starting with the token "A" was the same artifact.
