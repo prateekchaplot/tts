@@ -30,14 +30,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T3.2 | `arch/tts/t3.2` | [#18](https://github.com/prateekchaplot/tts/pull/18) | `a291da14620f9bb32cce5b5cd51d0da8ccd9689d` | 83 Vitest (32 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 13/13 (highlight advance/pause, word click, cue click, ArrowRight ±5 s, Space toggle, ended reset, WAV/SRT/VTT names + content); 196 pytest; Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T3.3 | `arch/tts/t3.3` | [#19](https://github.com/prateekchaplot/tts/pull/19) | `dce6ca5aa311965fd78d7e49a38dcad338ccdd66` | 93 Vitest (10 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live + mock Vite builds; mock-mode Chromium 15/15 (narrow starts collapsed, summary toggle, empty state, 2 entries with preview/voice/time, restore loads subtitles + audio, delete one keeps the other, delete open entry clears playback, no console errors); 196 pytest; Ruff check/format; strict mypy; `git diff --check` |
 | T4.1 | `arch/tts/t4.1` | [#20](https://github.com/prateekchaplot/tts/pull/20) | `898deff1b4717ddf604401a582df043f39485ddc` | 36/36 live browser checks on the built bundle **and** behind the Vite dev proxy (voice list + preview, SSE progress → succeeded, playback/highlight/seek, three §9.2-named downloads, history restore/delete, `putSettings` on blur persisted across reload); 25 live generations at limit 20 → 20 rows + 20 WAVs, five oldest ids 404, no `.part`; 93 Vitest; ESLint; `tsc --noEmit`; Prettier (CRLF); live build; 196 pytest unit + 16 integration; `git diff --check` |
-
 | T4.2 | `arch/tts/t4.2` | [#21](https://github.com/prateekchaplot/tts/pull/21) | `cae500631aff66b38d18f2aeda94246c5e8e5393` | 111 Vitest (18 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live Vite build; 23/23 keyboard-only AC15 checks against the built bundle with the real voice (isolated `TTS_DATA_DIR`); 196 pytest unit; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| _(empty)_ | | | | |
+| T4.3 | Observability polish | `arch/tts/t4.3` | 201 unit tests (5 new); 7 jobs integration tests; Ruff check/format; strict mypy; `git diff --check` | PR open, awaiting review |
 
 ## Remaining
 
@@ -59,11 +58,7 @@ _All P3 tasks done._
 
 ### P4 — Integration
 
-_T4.1 done — see Done._
-
-| ID | Task | Files | Deps | Acceptance criteria (summary) |
-|---|---|---|---|---|
-| T4.3 | Observability polish | `src/tts/config.py`, `src/tts/jobs/manager.py` | P2 | Failure reason logged without full input text |
+_T4.1 and T4.2 done — see Done. T4.3 is in Doing._
 
 ### P5 — Verification + docs
 
@@ -152,3 +147,6 @@ _T4.1 done — see Done._
 - T4.2 history delete: T3.3's deferred confirmation is an inline two-step — Delete swaps to `Confirm delete` + `Keep` and shows "Delete this entry? This cannot be undone.", the confirm button autofocuses, and Keep returns focus to the row's Delete button. No `window.confirm`, no new dependency. Focus effects are not unit-tested (no jsdom, §5 lists vitest only); they were verified in the live keyboard run, while the confirmation markup and labels are covered by static-markup tests.
 - T4.2 AC15 record: 23/23 keyboard-only checks passed in **live** mode against the built bundle served by `tts` (port 8322, isolated `TTS_DATA_DIR=.venv\tts-data`, real `en_US-lessac-medium`). Driven by keyboard events only (Tab/Shift+Tab/Enter/Space): first Tab → skip link → Enter → main landmark; Tab → textarea → typed "Hello world. This is a keyboard check."; Tab → voice select (populated) → Tab → Generate audio → Enter → "Audio ready." (aligned ratio 0.714); Tab → Play → Enter starts playback, Space pauses; Tab → sentence cue (focusable `Jump to 00:00: …`); Tab → WAV, SRT, VTT downloads all named `hello-world-this-is-a-keyboard_20261123-125257.{wav,srt,vtt}`; Tab → Delete → Enter (focus moves to Confirm delete) → Tab → Keep → Enter (focus returns to Delete); empty-input pass: error banner takes focus, shows "Enter some text before generating…" plus "What you can do: …", Tab reaches Dismiss, Enter returns focus to Generate audio. The temporary headless-Chromium script was removed after the run and is not committed.
 - T4.2 environment: port 8321 was already bound by a stale `tts` process, so the live run used 8322; the temporary script lives in `frontend/` so it resolves `@playwright/test` from `frontend/node_modules`. Vitest count moved 93 → 111 (9 in `strings.test.ts`, 4 in new `ErrorBanner.test.tsx`, 2 history-confirm markup, 2 skip-link/main, 1 `aria-busy`).
+- T4.3 decision (closes T1.6's `TTS_FAULT` note): `TTS_FAULT` is now read only by `config.py`, which adds a `fault` field to `Settings` (`none` by default, `engine` the test fault), normalizes case/whitespace, falls back to `none` with a warning on an unknown value, and logs "Fault injection enabled: engine" when armed. `jobs/manager.py` compares `self._settings.fault` and no longer touches `os.environ`, so §7.1 is true again; §7.1's field list was updated in this PR (§14.4). Dependent tests switched from env mutation to fault-enabled fixtures: `tests/unit/test_jobs_manager.py` gained a `fault_harness` fixture (built by the shared `_build_harness` helper) and `tests/integration/test_jobs_pipeline.py` gained a `fault_environment` fixture (built by `_build_environment(tmp_path, fault=...)`).
+- T4.3 logging: the two failure branches call the new `_log_preview(text)` helper (`text[:LOG_PREVIEW_CHARS]`, 80 chars) so the input preview can never exceed §11's limit; the existing WARNING line still carries the §9.1 code and the failure reason, and the exception keeps the traceback at ERROR. No production behavior other than `TTS_FAULT`'s source changed — the §11 log lines (start/success/failure/cancel, degraded timings, eviction, offline first run) already existed.
+- T4.3 enforcement test: new `tests/unit/test_observability.py` (unique basename, per the T1.2 note) proves a failed generation logs `ENGINE_ERROR` + the reason + the 80-char preview, and uses `difflib.SequenceMatcher` to assert the longest common run between the >80-char input and all captured log text is ≤ 80 characters (the marker after char 80 never appears, no timing JSON is logged). It also pins `Settings.load()` fault parsing (default/override/unknown) and proves a manager built with `fault="none"` succeeds even when `TTS_FAULT=engine` is set in the environment.

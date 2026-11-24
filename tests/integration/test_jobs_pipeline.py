@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from tts.config import Settings
+from tts.config import FAULT_ENGINE, Settings
 from tts.history.dal import Dal
 from tts.jobs.manager import JobManager
 from tts.jobs.sse import SseEvent
@@ -34,6 +34,27 @@ LONG_TEXT = (
 @pytest.fixture
 def environment(tmp_path: Path) -> Any:
     """Build a manager that renders with the downloaded voice but writes to a temp dir."""
+    manager, dal = _build_environment(tmp_path)
+
+    yield manager, dal, tmp_path
+
+    manager.close()
+    dal.close()
+
+
+@pytest.fixture
+def fault_environment(tmp_path: Path) -> Any:
+    """Build a manager whose first job fails after its first sentence."""
+    manager, dal = _build_environment(tmp_path, fault=FAULT_ENGINE)
+
+    yield manager, dal, tmp_path
+
+    manager.close()
+    dal.close()
+
+
+def _build_environment(tmp_path: Path, *, fault: str = "none") -> tuple[JobManager, Dal]:
+    """Wire a manager to the real voice store while writing to a temp dir."""
     real_settings = Settings.load()
     voices_dir = ensure_data_dirs(real_settings)
     installed = {voice.id for voice in list_voices()}
@@ -51,17 +72,14 @@ def environment(tmp_path: Path) -> Any:
         history_limit=real_settings.history_limit,
         log_level=real_settings.log_level,
         default_voice_id=real_settings.default_voice_id,
+        fault=fault,
     )
     dal = Dal(tmp_path)
     manager = JobManager(dal, settings)
     # The manager points the voice store at its own data directory; restore the
     # real one so the downloaded voice stays visible to the store.
     ensure_data_dirs(real_settings)
-
-    yield manager, dal, tmp_path
-
-    manager.close()
-    dal.close()
+    return manager, dal
 
 
 def _wait_for_status(dal: Dal, generation_id: str, timeout: float = 60.0) -> dict[str, Any]:
@@ -156,11 +174,8 @@ def test_real_voice_job_derives_one_cue_per_sentence(environment: Any) -> None:
     assert cues[0]["endMs"] <= cues[1]["startMs"]
 
 
-def test_injected_engine_fault_leaves_no_audio(
-    environment: Any, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    manager, dal, tmp_path = environment
-    monkeypatch.setenv("TTS_FAULT", "engine")
+def test_injected_engine_fault_leaves_no_audio(fault_environment: Any) -> None:
+    manager, dal, tmp_path = fault_environment
 
     generation_id = manager.submit(DEFAULT_VOICE_ID, "One sentence. Two sentences.")
 

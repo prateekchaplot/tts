@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import numpy as np
 
-from tts.config import Settings
+from tts.config import FAULT_ENGINE, Settings
 from tts.engine.piper_engine import synthesize
 from tts.history.dal import Dal
 from tts.jobs.sse import EventBus, SseEvent, Subscriber
@@ -49,12 +49,6 @@ if TYPE_CHECKING:
     from tts.voices.store import LoadedVoice
 
 logger = logging.getLogger(__name__)
-
-FAULT_ENV_VAR = "TTS_FAULT"
-"""Environment variable that injects a mid-run engine failure (§11, §15)."""
-
-FAULT_ENGINE = "engine"
-"""Fault mode that fails a job after its first sentence."""
 
 MAX_WAV_VALUE = 32767.0
 """Float-to-int16 scale used by piper when it writes WAV files."""
@@ -197,15 +191,9 @@ def _duration_ms(result: SynthesisResult) -> int:
     return math.floor(result.total_samples * 1000.0 / result.sample_rate + 0.5)
 
 
-def _fault_mode() -> str:
-    """Return the configured fault-injection mode (§11, §15).
-
-    ARCHITECTURE §7.1 makes ``config`` the only reader of environment
-    variables, but §14.2 assigns the ``TTS_FAULT`` implementation to T1.6 and
-    ``config.py`` to T0.2/T4.3, so the variable is read here. T4.3 owns the
-    follow-up that folds it into ``Settings``.
-    """
-    return os.environ.get(FAULT_ENV_VAR, "none").strip().lower()
+def _log_preview(text: str) -> str:
+    """Return the longest input fragment that may appear in a log line (§11)."""
+    return text[:LOG_PREVIEW_CHARS]
 
 
 def _sentence_triplets(voice: LoadedVoice, result: SynthesisResult) -> list[tuple[int, int, int]]:
@@ -486,7 +474,7 @@ class JobManager:
                 generation_id,
                 voice_id,
                 len(text),
-                text[:LOG_PREVIEW_CHARS],
+                _log_preview(text),
             )
             self._finish_failed(
                 generation_id,
@@ -502,7 +490,7 @@ class JobManager:
                 generation_id,
                 voice_id,
                 len(text),
-                text[:LOG_PREVIEW_CHARS],
+                _log_preview(text),
             )
             self._finish_failed(
                 generation_id,
@@ -525,7 +513,7 @@ class JobManager:
             with self._lock:
                 job.sentence_index += 1
                 self._bus.publish(generation_id, _progress_event(generation_id, "running", job))
-            if _fault_mode() == FAULT_ENGINE and job.sentence_index == 1:
+            if self._settings.fault == FAULT_ENGINE and job.sentence_index == 1:
                 raise EngineFaultError("injected engine failure")
 
         return on_sentence
