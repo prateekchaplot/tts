@@ -33,12 +33,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T4.2 | `arch/tts/t4.2` | [#21](https://github.com/prateekchaplot/tts/pull/21) | `cae500631aff66b38d18f2aeda94246c5e8e5393` | 111 Vitest (18 new); ESLint; `tsc --noEmit`; Prettier (CRLF); live Vite build; 23/23 keyboard-only AC15 checks against the built bundle with the real voice (isolated `TTS_DATA_DIR`); 196 pytest unit; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T4.3 | `arch/tts/t4.3` | [#22](https://github.com/prateekchaplot/tts/pull/22) | `6734b22e13a7a77a83f31e4969ffdf661d13d260` | 201 unit tests (5 new); 7 jobs integration tests against real `en_US-lessac-medium` (injected fault leaves no `.wav`/`.part`); Ruff check/format; strict mypy; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T5.1 | `arch/tts/t5.1` | [#23](https://github.com/prateekchaplot/tts/pull/23) | `fd6bd31834a2cbeb1642abf8587444d5d1873f91` | 15/15 Playwright specs (AC1–AC15) against the real `en_US-lessac-medium`, three consecutive runs including one from empty data dirs; `tsc -p tests/e2e --noEmit`; 201 pytest unit + 16 integration; 111 Vitest; Ruff check/format; strict mypy; ESLint; frontend `tsc --noEmit`; Prettier (CRLF); `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
+| T5.3 | `arch/tts/t5.3` | [#25](https://github.com/prateekchaplot/tts/pull/25) | `docs/MEASUREMENTS.md` with hardware note: 160 measurable word onsets (p95 15 ms, max 32 ms → A-3 ±100 ms confirmed), SSE p95 191 ms, time-to-first-audio ~2,960/3,210 ms; 202 pytest unit + 16 integration; 111 Vitest; Ruff check/format; strict mypy; ESLint; `tsc --noEmit`; Prettier (CRLF); `tsc -p tests/e2e --noEmit`; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T5.3 | Measurement | `arch/tts/t5.3` | 3 texts (139 / 1,999 / 4,975 chars) x 2 voices, 3 runs of the 2,000-char text; `docs/MEASUREMENTS.md` written with hardware note; 160 measurable word onsets (p95 15 ms, max 32 ms); SSE p95 191 ms; TTF audio ~3 s | PR open |
+| _(empty)_ | | | | |
 
 ## Remaining
 
