@@ -35,11 +35,13 @@ Statuses: done (PR merged) · doing (branch open, pending review) · remaining �
 | T5.1 | `arch/tts/t5.1` | [#23](https://github.com/prateekchaplot/tts/pull/23) | `fd6bd31834a2cbeb1642abf8587444d5d1873f91` | 15/15 Playwright specs (AC1–AC15) against the real `en_US-lessac-medium`, three consecutive runs including one from empty data dirs; `tsc -p tests/e2e --noEmit`; 201 pytest unit + 16 integration; 111 Vitest; Ruff check/format; strict mypy; ESLint; frontend `tsc --noEmit`; Prettier (CRLF); `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 | T5.3 | `arch/tts/t5.3` | [#25](https://github.com/prateekchaplot/tts/pull/25) | `docs/MEASUREMENTS.md` with hardware note: 160 measurable word onsets (p95 15 ms, max 32 ms → A-3 ±100 ms confirmed), SSE p95 191 ms, time-to-first-audio ~2,960/3,210 ms; 202 pytest unit + 16 integration; 111 Vitest; Ruff check/format; strict mypy; ESLint; `tsc --noEmit`; Prettier (CRLF); `tsc -p tests/e2e --noEmit`; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
 
+| T5.2 | `arch/tts/t5.2` | [#26](https://github.com/prateekchaplot/tts/pull/26) | Rewritten README + `docs/USER_GUIDE.md` + `docs/KNOWN_LIMITATIONS.md` + PRD D-1 note; fresh venv + `pip install -e .`; `npm ci && npm run build`; isolated server served UI (`/` + asset 200) and generated a 4.86 s WAV with SRT/VTT; local links resolve; 202 pytest unit + 16 integration; 111 Vitest; Ruff check/format; strict mypy; ESLint; `tsc --noEmit`; Prettier (CRLF); `tsc -p tests/e2e --noEmit`; `git diff --check`; PR CI green (lint, unit ubuntu+windows, integration, e2e) |
+
 ## Doing
 
 | ID | Task | Branch | Verification | Status |
 |---|---|---|---|---|
-| T5.2 | Docs | `arch/tts/t5.2` | Fresh venv + `pip install -e .`; `npm ci && npm run build`; isolated data dir served UI (`/` + asset 200) and generated a 4.86 s WAV with SRT/VTT; all local links resolve; 202 unit + 16 integration; 111 Vitest; Ruff; mypy; ESLint; tsc; Prettier; e2e tsc; `git diff --check` | PR open |
+| _(empty)_ | | | | |
 
 ## Remaining
 
@@ -65,7 +67,7 @@ _All P4 tasks done._
 
 ### P5 — Verification + docs
 
-_T5.3 done; T5.2 is in review._
+_All P5 tasks done._
 
 ## Notes
 
@@ -166,3 +168,5 @@ _T5.3 done; T5.2 is in review._
 - T5.2 docs content: README covers requirements, quick start (PowerShell + POSIX), first run, daily use, configuration, data locations, a troubleshooting table, development commands, and privacy. `docs/USER_GUIDE.md` walks the UI workflow, keyboard shortcuts, statuses, error codes, downloads, history, and data management. `docs/KNOWN_LIMITATIONS.md` records D-1, the confirmed +/-100 ms tolerance and its measurement caveats, the 20-entry retention, WAV size and format limits, first-run network use, unsupported input types, platform/browser status, distribution caveats, and the security model. All required limitations (pitch, tolerance, retention, WAV size, first-run online step, unsupported types) are present.
 - T5.2 verification: a fresh `py -3.12 -m venv` plus `pip install -e .` imported piper/onnxruntime 1.32 and printed `tts --version` 0.1.0; `npm ci && npm run build` produced `frontend/dist`; an isolated `TTS_DATA_DIR` server on port 8399 served `/` (title "tts - local text to speech") and its JS asset with 200, reported `voicesInstalled: 1`, and generated a 72-character text in 4.86 s (214,572-byte RIFF WAV, 13 words, 84.6% aligned, 3 cues); SRT and VTT downloads started with `1` and `WEBVTT`, and no `.part` file remained. Local markdown links were checked mechanically; 202 pytest unit + 16 integration; 111 Vitest; Ruff check/format; strict mypy; ESLint; `tsc --noEmit`; Prettier (CRLF); `tsc -p tests/e2e --noEmit`; `git diff --check`.
 - T5.2 caveat: the automatic first-run voice download stalled in this environment (more than four minutes with no bytes written toward the 63 MB model), so the workflow check reused the already-installed `en_US-lessac-medium` pair after restarting. The download code path is the same `install_voice` covered by T1.1 and is exercised from empty data dirs by T2.3/T5.1 tests; the README and KNOWN_LIMITATIONS now tell users to stop a stalled download and run `tts add-voice` explicitly. A true fresh-machine run on a normal connection remains the AC's manual confirmation.
+
+- Completion: all section 14 tasks are merged; P5 is complete. Two residual manual checks are not code tasks: the AC7 listening checklist in `docs/MEASUREMENTS.md` is still 0/8 checked, and the T5.2 fresh-machine run still needs one live first-run voice download on a normal connection (the local check hit a stalled download and reused an installed voice).
