@@ -61,6 +61,8 @@ The user can adjust how the selected voice speaks the text.
 - Changing settings does not require regenerating from scratch in a separate screen; the user adjusts and regenerates from the same view.
 - Settings outside the supported range are prevented or corrected with a visible message rather than silently accepted.
 
+> **Known deviation (D-1, approved in the architecture):** Pitch control is omitted from the MVP. The Piper engine exposes no pitch parameter and OS-voice engines were rejected, so the API, UI, and database have no pitch field. FR-03 is satisfied for speaking rate and volume only. Adding pitch later would require a DSP pitch-shift stage between synthesis and file writing plus one API field. See [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md#pitch-control).
+
 ### FR-04: Audio Generation
 The system converts the provided text into an audio file using the selected voice and settings.
 
@@ -138,7 +140,7 @@ The system keeps a record of recent generations within the application so the us
 - Web UI running locally, with local/offline voices only.
 - Text input by typing/pasting and by plain-text file upload.
 - Voice selection with preview and a usable default.
-- Speaking rate, volume, and pitch controls.
+- Speaking rate and volume controls (pitch is deferred; see the FR-03 known deviation).
 - Audio generation with progress feedback, cancellation, and failure handling.
 - Word-level timestamps with derived sentence-level subtitle cues.
 - Synchronized in-browser playback with live word highlighting and seek-to-word.
